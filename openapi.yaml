@@ -1,0 +1,106 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: ""
+    version: 0.0.1
+paths:
+    /helloworld/{name}:
+        get:
+            tags:
+                - Greeter
+            description: Sends a greeting
+            operationId: Greeter_SayHello
+            parameters:
+                - name: name
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/helloworld.v1.HelloReply'
+    /rabbitmq/message:
+        post:
+            tags:
+                - RabbitMQ
+            description: 发送消息
+            operationId: RabbitMQ_SendMessage
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rabbitmq.v1.SendMessageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rabbitmq.v1.SendMessageReply'
+    /rabbitmq/service:
+        post:
+            tags:
+                - RabbitMQ
+            description: 发送消息到特定服务
+            operationId: RabbitMQ_SendToService
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rabbitmq.v1.SendToServiceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rabbitmq.v1.SendToServiceReply'
+components:
+    schemas:
+        helloworld.v1.HelloReply:
+            type: object
+            properties:
+                message:
+                    type: string
+            description: The response message containing the greetings
+        rabbitmq.v1.SendMessageReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: 发送消息响应
+        rabbitmq.v1.SendMessageRequest:
+            type: object
+            properties:
+                routingKey:
+                    type: string
+                message:
+                    type: string
+            description: 发送消息请求
+        rabbitmq.v1.SendToServiceReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: 发送消息到服务响应
+        rabbitmq.v1.SendToServiceRequest:
+            type: object
+            properties:
+                service:
+                    type: string
+                message:
+                    type: string
+            description: 发送消息到服务请求
+tags:
+    - name: Greeter
+      description: The greeting service definition.
+    - name: RabbitMQ
+      description: RabbitMQ服务定义

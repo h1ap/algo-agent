@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package rabbitmq.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "algo-agent/api/rabbitmq/v1;v1";
+option java_multiple_files = true;
+option java_package = "dev.kratos.api.rabbitmq.v1";
+option java_outer_classname = "RabbitMQProtoV1";
+
+// RabbitMQ服务定义
+service RabbitMQ {
+  // 发送消息
+  rpc SendMessage (SendMessageRequest) returns (SendMessageReply) {
+    option (google.api.http) = {
+      post: "/rabbitmq/message"
+      body: "*"
+    };
+  }
+  
+  // 发送消息到特定服务
+  rpc SendToService (SendToServiceRequest) returns (SendToServiceReply) {
+    option (google.api.http) = {
+      post: "/rabbitmq/service"
+      body: "*"
+    };
+  }
+}
+
+// 发送消息请求
+message SendMessageRequest {
+  string routing_key = 1;
+  string message = 2;
+}
+
+// 发送消息响应
+message SendMessageReply {
+  bool success = 1;
+}
+
+// 发送消息到服务请求
+message SendToServiceRequest {
+  string service = 1;
+  string message = 2;
+}
+
+// 发送消息到服务响应
+message SendToServiceReply {
+  bool success = 1;
+} 
