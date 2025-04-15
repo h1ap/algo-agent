@@ -1,12 +1,8 @@
 package data
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
-
-	"algo-agent/internal/biz"
 	"algo-agent/internal/conf"
+	"context"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/wagslane/go-rabbitmq"
@@ -21,85 +17,8 @@ type RabbitMQRepo struct {
 	log       *log.Helper
 }
 
-// NewRabbitMQRepo 创建一个新的RabbitMQ客户端，适配biz.MQSender接口
-func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (biz.MQSender, error) {
-	l := log.NewHelper(log.With(logger, "module", "data/rabbitmq"))
-	rabbitLogger := &rabbitLogger{log: l}
-
-	rabbitmqConf := c.Rabbitmq
-	if rabbitmqConf == nil || rabbitmqConf.Url == "" {
-		l.Error("RabbitMQ URL is not set")
-		return nil, errors.New("RabbitMQ URL is not set")
-	}
-
-	// 填充配置
-	cfg := rabbitmq.Config{
-		Vhost: rabbitmqConf.Vhost,
-	}
-
-	// 建立连接
-	conn, err := rabbitmq.NewConn(
-		rabbitmqConf.Url,
-		rabbitmq.WithConnectionOptionsLogger(rabbitLogger),
-		rabbitmq.WithConnectionOptionsConfig(cfg),
-	)
-	if err != nil {
-		l.Errorf("failed to connect to RabbitMQ: %v", err)
-		if conn != nil {
-			_ = conn.Close()
-		}
-		return nil, err
-	}
-
-	publisher, err := rabbitmq.NewPublisher(
-		conn,
-		rabbitmq.WithPublisherOptionsLogger(rabbitLogger),
-		rabbitmq.WithPublisherOptionsExchangeName(rabbitmqConf.ExchangeName),
-		rabbitmq.WithPublisherOptionsExchangeKind("direct"),
-		rabbitmq.WithPublisherOptionsExchangeDurable,
-	)
-	if err != nil {
-		l.Errorf("failed to create publisher: %v", err)
-		if conn != nil {
-			_ = conn.Close()
-		}
-		return nil, err
-	}
-
-	// 创建消费者处理器
-	handler := func(d rabbitmq.Delivery) rabbitmq.Action {
-		l.Infof("Received message: %s", string(d.Body))
-		return rabbitmq.Ack
-	}
-
-	consumer, err := rabbitmq.NewConsumer(
-		conn,
-		handler,
-		getDynamicQueueName(rabbitmqConf),
-		rabbitmq.WithConsumerOptionsRoutingKey(rabbitmqConf.RoutingKey),
-		rabbitmq.WithConsumerOptionsExchangeName(rabbitmqConf.ExchangeName),
-		rabbitmq.WithConsumerOptionsExchangeDeclare,
-	)
-	if err != nil {
-		l.Errorf("failed to create consumer: %v", err)
-		publisher.Close()
-		if conn != nil {
-			_ = conn.Close()
-		}
-		return nil, err
-	}
-
-	return &RabbitMQRepo{
-		conn:      conn,
-		publisher: publisher,
-		consumer:  consumer,
-		conf:      rabbitmqConf,
-		log:       l,
-	}, nil
-}
-
 // SendMessage 发送字符串消息
-func (r *RabbitMQRepo) SendMessage(ctx context.Context, routingKey, message string) error {
+func (r *RabbitMQRepo) SendMessage(ctx context.Context, exchangeName, routingKey, message string) error {
 	rk := r.conf.Group + r.conf.ServiceQueuePrefix + routingKey
 
 	err := r.publisher.Publish(
@@ -113,46 +32,34 @@ func (r *RabbitMQRepo) SendMessage(ctx context.Context, routingKey, message stri
 		return err
 	}
 
-	r.log.WithContext(ctx).Infof("message sent: routingKey=%s", rk)
+	r.log.WithContext(ctx).Infof("message sent: exchangeName=%s, routingKey=%s, message=%s", exchangeName, rk, message)
 	return nil
 }
 
-// SendObjectMessage 发送对象消息
-func (r *RabbitMQRepo) SendObjectMessage(ctx context.Context, routingKey string, object interface{}) error {
-	rk := r.conf.Group + r.conf.ServiceQueuePrefix + routingKey
+// SendToQueue 发送消息到队列
+func (r *RabbitMQRepo) SendToQueue(ctx context.Context, queueName, message string) error {
+	rk := r.conf.Group + r.conf.NodeQueuePrefix + queueName
 
-	jsonData, err := json.Marshal(object)
-	if err != nil {
-		r.log.WithContext(ctx).Errorf("failed to marshal object message: %v", err)
-		return err
-	}
-
-	err = r.publisher.Publish(
-		jsonData,
+	err := r.publisher.Publish(
+		[]byte(message),
 		[]string{rk},
 		rabbitmq.WithPublishOptionsContentType("application/json"),
 	)
 	if err != nil {
-		r.log.WithContext(ctx).Errorf("failed to publish object message: %v", err)
+		r.log.WithContext(ctx).Errorf("failed to publish message to queue: %v", err)
 		return err
 	}
 
-	r.log.WithContext(ctx).Infof("object message sent: routingKey=%s, type=%T", rk, object)
+	r.log.WithContext(ctx).Infof("message sent to queue: queueName=%s, message=%s", r.conf.DefaultExchangeName, rk, message)
 	return nil
 }
 
 // SendToService 发送消息到特定服务
-func (r *RabbitMQRepo) SendToService(ctx context.Context, service string, object interface{}) error {
+func (r *RabbitMQRepo) SendToService(ctx context.Context, service string, message string) error {
 	rk := r.conf.Group + r.conf.ServiceQueuePrefix + service
 
-	jsonData, err := json.Marshal(object)
-	if err != nil {
-		r.log.WithContext(ctx).Errorf("failed to marshal object message: %v", err)
-		return err
-	}
-
-	err = r.publisher.Publish(
-		jsonData,
+	err := r.publisher.Publish(
+		[]byte(message),
 		[]string{rk},
 		rabbitmq.WithPublishOptionsContentType("application/json"),
 	)
@@ -161,7 +68,7 @@ func (r *RabbitMQRepo) SendToService(ctx context.Context, service string, object
 		return err
 	}
 
-	r.log.WithContext(ctx).Infof("object message sent to service: service=%s, type=%T", service, object)
+	r.log.WithContext(ctx).Infof("message sent to service: service=%s, message=%s", service, message)
 	return nil
 }
 

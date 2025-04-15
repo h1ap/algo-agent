@@ -37,16 +37,39 @@ message Data {
     google.protobuf.Duration write_timeout = 4;
   }
   message RabbitMQ {
-    string url = 1;
-    string vhost = 2;
-    string exchange_name = 3;
-    string routing_key = 4;
-    string group = 5;
-    string service_queue_prefix = 6;
-    string node_queue_prefix = 7;
-    string node_name = 8;
+    string host = 1;
+    int32 port = 2;
+    string username = 3;
+    string password = 4;
+    string vhost = 5;
+    string group = 6;
+    string default_exchange_name = 7;
+    string default_routing_key = 8;
+    string service_queue_prefix = 9;
+    string node_queue_prefix = 10;
+    string node_name = 11;
+    message Listener {
+      int32 retry_max_attempts = 1;
+      google.protobuf.Duration retry_initial_interval = 2;
+      double retry_multiplier = 3;
+      google.protobuf.Duration retry_max_interval = 4;
+    }
+    Listener listener = 12;
+  }
+  message Oss {
+    string endpoint = 1;
+    string access_key = 2;
+    string secret_key = 3;
+  }
+  message Docker {
+    string host = 1;
+    uint32 max_connections = 2;
+    google.protobuf.Duration connection_timeout = 3;
+    google.protobuf.Duration response_timeout = 4;
   }
   Database database = 1;
   Redis redis = 2;
   RabbitMQ rabbitmq = 3;
+  Oss oss = 4;
+  Docker docker = 5;
 }

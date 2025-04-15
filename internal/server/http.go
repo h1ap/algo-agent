@@ -1,8 +1,7 @@
 package server
 
 import (
-	v1 "algo-agent/api/helloworld/v1"
-	rabbitmqv1 "algo-agent/api/rabbitmq/v1"
+	v1 "algo-agent/api/oss/v1"
 	"algo-agent/internal/conf"
 	"algo-agent/internal/service"
 
@@ -12,7 +11,7 @@ import (
 )
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, greeter *service.GreeterService, rabbitmq *service.RabbitMQService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, s *service.OSSServer, logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
@@ -28,7 +27,6 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService, rabbitmq *se
 		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
-	v1.RegisterGreeterHTTPServer(srv, greeter)
-	rabbitmqv1.RegisterRabbitMQHTTPServer(srv, rabbitmq)
+	v1.RegisterOSSServiceHTTPServer(srv, s)
 	return srv
 }

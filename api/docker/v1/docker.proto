@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+package api.docker.v1;
+
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "algo-agent/api/docker/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.docker.v1";
+
+// Docker服务接口定义
+service DockerService {
+  // 根据容器名查找容器
+  rpc FindContainerByName (FindContainerByNameRequest) returns (FindContainerByNameReply) {
+    option (google.api.http) = {
+      get: "/v1/docker/container/{container_name}"
+    };
+  }
+
+  // 通过镜像和自定义参数运行一个容器
+  rpc RunContainer (RunContainerRequest) returns (RunContainerReply) {
+    option (google.api.http) = {
+      post: "/v1/docker/container/run"
+      body: "*"
+    };
+  }
+
+  // 运行并启动容器，返回容器信息
+  rpc RunAndStartContainer (RunAndStartContainerRequest) returns (RunAndStartContainerReply) {
+    option (google.api.http) = {
+      post: "/v1/docker/container/run_start"
+      body: "*"
+    };
+  }
+
+  // 运行并启动带端口映射的容器
+  rpc RunAndStartContainerWithPort (RunAndStartContainerWithPortRequest) returns (RunAndStartContainerWithPortReply) {
+    option (google.api.http) = {
+      post: "/v1/docker/container/run_start_port"
+      body: "*"
+    };
+  }
+
+  // 获取指定容器的最后若干行日志
+  rpc GetContainerLastLogs (GetContainerLastLogsRequest) returns (GetContainerLastLogsReply) {
+    option (google.api.http) = {
+      get: "/v1/docker/container/{container_id}/logs"
+    };
+  }
+
+  // 停止容器
+  rpc StopContainer (StopContainerRequest) returns (StopContainerReply) {
+    option (google.api.http) = {
+      post: "/v1/docker/container/{container_id}/stop"
+    };
+  }
+
+  // 通过名称停止容器
+  rpc StopContainerByName (StopContainerByNameRequest) returns (StopContainerByNameReply) {
+    option (google.api.http) = {
+      post: "/v1/docker/container/name/{container_name}/stop"
+      body: "*"
+    };
+  }
+
+  // 获取容器的停止时间戳
+  rpc GetContainerStopTime (GetContainerStopTimeRequest) returns (GetContainerStopTimeReply) {
+    option (google.api.http) = {
+      get: "/v1/docker/container/{container_id}/stop_time"
+    };
+  }
+
+  // 查找指定名称的镜像
+  rpc FindImageByName (FindImageByNameRequest) returns (FindImageByNameReply) {
+    option (google.api.http) = {
+      get: "/v1/docker/image/{image_name}"
+    };
+  }
+
+  // 导入并标记镜像
+  rpc ImportAndTagImage (ImportAndTagImageRequest) returns (ImportAndTagImageReply) {
+    option (google.api.http) = {
+      post: "/v1/docker/image/import"
+      body: "*"
+    };
+  }
+}
+
+// 容器信息
+message ContainerInfo {
+  string container_id = 1;
+  string container_name = 2;
+}
+
+// 查找容器请求
+message FindContainerByNameRequest {
+  string container_name = 1 [(validate.rules).string.min_len = 1];
+}
+
+// 查找容器响应
+message FindContainerByNameReply {
+  ContainerInfo container = 1;
+}
+
+// 运行容器请求
+message RunContainerRequest {
+  string image_name = 1 [(validate.rules).string.min_len = 1];
+  repeated string custom_args = 2;
+}
+
+// 运行容器响应
+message RunContainerReply {
+  string container_id = 1;
+}
+
+// 运行并启动容器请求
+message RunAndStartContainerRequest {
+  string image_name = 1 [(validate.rules).string.min_len = 1];
+  string host_path = 2;
+  string container_path = 3;
+  string script_path = 4;
+  repeated string args = 5;
+}
+
+// 运行并启动容器响应
+message RunAndStartContainerReply {
+  ContainerInfo container = 1;
+}
+
+// 运行并启动带端口映射的容器请求
+message RunAndStartContainerWithPortRequest {
+  string image_name = 1 [(validate.rules).string.min_len = 1];
+  string host_path = 2;
+  string container_path = 3;
+  string command = 4;
+  repeated string args = 5;
+  int32 host_port = 6;
+}
+
+// 运行并启动带端口映射的容器响应
+message RunAndStartContainerWithPortReply {
+  string container_id = 1;
+}
+
+// 获取容器日志请求
+message GetContainerLastLogsRequest {
+  string container_id = 1 [(validate.rules).string.min_len = 1];
+  int32 tail = 2;
+}
+
+// 获取容器日志响应
+message GetContainerLastLogsReply {
+  string logs = 1;
+}
+
+// 停止容器请求
+message StopContainerRequest {
+  string container_id = 1 [(validate.rules).string.min_len = 1];
+}
+
+// 停止容器响应
+message StopContainerReply {
+  bool success = 1;
+}
+
+// 通过名称停止容器请求
+message StopContainerByNameRequest {
+  string container_name = 1 [(validate.rules).string.min_len = 1];
+  bool remove = 2;
+}
+
+// 通过名称停止容器响应
+message StopContainerByNameReply {
+  bool success = 1;
+}
+
+// 获取容器停止时间请求
+message GetContainerStopTimeRequest {
+  string container_id = 1 [(validate.rules).string.min_len = 1];
+}
+
+// 获取容器停止时间响应
+message GetContainerStopTimeReply {
+  int64 stop_time = 1;
+}
+
+// 查找镜像请求
+message FindImageByNameRequest {
+  string image_name = 1 [(validate.rules).string.min_len = 1];
+}
+
+// 查找镜像响应
+message FindImageByNameReply {
+  bool exists = 1;
+}
+
+// 导入并标记镜像请求
+message ImportAndTagImageRequest {
+  string tar_file_path = 1 [(validate.rules).string.min_len = 1];
+  string full_image_name = 2 [(validate.rules).string.min_len = 1];
+}
+
+// 导入并标记镜像响应
+message ImportAndTagImageReply {
+  bool success = 1;
+} 

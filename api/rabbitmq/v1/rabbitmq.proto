@@ -1,28 +1,36 @@
 syntax = "proto3";
 
-package rabbitmq.v1;
+package api.rabbitmq.v1;
 
 import "google/api/annotations.proto";
+import "validate/validate.proto";
 
 option go_package = "algo-agent/api/rabbitmq/v1;v1";
 option java_multiple_files = true;
-option java_package = "dev.kratos.api.rabbitmq.v1";
-option java_outer_classname = "RabbitMQProtoV1";
+option java_package = "api.rabbitmq.v1";
 
-// RabbitMQ服务定义
-service RabbitMQ {
-  // 发送消息
+// RabbitMQ服务接口定义
+service RabbitMQService {
+  // 发送消息到特定交换机和路由键
   rpc SendMessage (SendMessageRequest) returns (SendMessageReply) {
     option (google.api.http) = {
-      post: "/rabbitmq/message"
+      post: "/v1/mq/send"
       body: "*"
     };
   }
-  
+
+  // 发送消息到特定队列
+  rpc SendToQueue (SendToQueueRequest) returns (SendToQueueReply) {
+    option (google.api.http) = {
+      post: "/v1/mq/queue/send"
+      body: "*"
+    };
+  }
+
   // 发送消息到特定服务
   rpc SendToService (SendToServiceRequest) returns (SendToServiceReply) {
     option (google.api.http) = {
-      post: "/rabbitmq/service"
+      post: "/v1/mq/service/send"
       body: "*"
     };
   }
@@ -30,8 +38,9 @@ service RabbitMQ {
 
 // 发送消息请求
 message SendMessageRequest {
-  string routing_key = 1;
-  string message = 2;
+  string exchange_name = 1 [(validate.rules).string.min_len = 1];
+  string routing_key = 2 [(validate.rules).string.min_len = 1];
+  string message = 3 [(validate.rules).string.min_len = 1];
 }
 
 // 发送消息响应
@@ -39,13 +48,24 @@ message SendMessageReply {
   bool success = 1;
 }
 
-// 发送消息到服务请求
-message SendToServiceRequest {
-  string service = 1;
-  string message = 2;
+// 发送到队列请求
+message SendToQueueRequest {
+  string queue_name = 1 [(validate.rules).string.min_len = 1];
+  string message = 2 [(validate.rules).string.min_len = 1];
 }
 
-// 发送消息到服务响应
+// 发送到队列响应
+message SendToQueueReply {
+  bool success = 1;
+}
+
+// 发送到服务请求
+message SendToServiceRequest {
+  string service = 1 [(validate.rules).string.min_len = 1];
+  string message = 2 [(validate.rules).string.min_len = 1];
+}
+
+// 发送到服务响应
 message SendToServiceReply {
   bool success = 1;
 } 

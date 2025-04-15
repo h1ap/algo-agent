@@ -1,0 +1,191 @@
+syntax = "proto3";
+
+package api.oss.v1;
+
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "algo-agent/api/oss/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.oss.v1";
+
+// OSS服务接口定义
+service OSSService {
+  // 上传临时文件
+  rpc TempUpload (TempUploadRequest) returns (TempUploadReply) {
+    option (google.api.http) = {
+      post: "/v1/oss/temp/upload"
+      body: "*"
+    };
+  }
+
+  // 上传文件
+  rpc UploadFile (UploadFileRequest) returns (UploadFileReply) {
+    option (google.api.http) = {
+      post: "/v1/oss/upload"
+      body: "*"
+    };
+  }
+
+  // 下载文件
+  rpc DownloadFile (DownloadFileRequest) returns (DownloadFileReply) {
+    option (google.api.http) = {
+      get: "/v1/oss/download/{bucket_name}/{file_path}"
+    };
+  }
+
+  // 删除文件
+  rpc DeleteFile (DeleteFileRequest) returns (DeleteFileReply) {
+    option (google.api.http) = {
+      delete: "/v1/oss/file/{bucket_name}/{file_path}"
+    };
+  }
+
+  // 批量删除文件
+  rpc BatchDeleteFiles (BatchDeleteFilesRequest) returns (BatchDeleteFilesReply) {
+    option (google.api.http) = {
+      post: "/v1/oss/batch/delete"
+      body: "*"
+    };
+  }
+
+  // 列出文件
+  rpc ListFiles (ListFilesRequest) returns (ListFilesReply) {
+    option (google.api.http) = {
+      get: "/v1/oss/list/{bucket_name}/{prefix}"
+    };
+  }
+
+  // 合并文件
+  rpc MergeFiles (MergeFilesRequest) returns (MergeFilesReply) {
+    option (google.api.http) = {
+      post: "/v1/oss/merge"
+      body: "*"
+    };
+  }
+
+  // 写入字符串
+  rpc WriteString (WriteStringRequest) returns (WriteStringReply) {
+    option (google.api.http) = {
+      post: "/v1/oss/write"
+      body: "*"
+    };
+  }
+
+  // 读取字符串
+  rpc ReadString (ReadStringRequest) returns (ReadStringReply) {
+    option (google.api.http) = {
+      get: "/v1/oss/read/{bucket_name}/{file_path}"
+    };
+  }
+}
+
+// 文件信息
+message FileInfo {
+  string name = 1 [(validate.rules).string.min_len = 1];
+  int64 size = 2;
+  string content_type = 3;
+  bytes content = 4;
+}
+
+// 上传临时文件请求
+message TempUploadRequest {
+  string bucket_name = 1 [(validate.rules).string.min_len = 1];
+  FileInfo file = 2 [(validate.rules).message.required = true];
+}
+
+// 上传临时文件响应
+message TempUploadReply {
+  string file_path = 1;
+}
+
+// 上传文件请求
+message UploadFileRequest {
+  string bucket_name = 1 [(validate.rules).string.min_len = 1];
+  FileInfo file = 2 [(validate.rules).message.required = true];
+  string file_path = 3 [(validate.rules).string.min_len = 1];
+}
+
+// 上传文件响应
+message UploadFileReply {
+  bool success = 1;
+}
+
+// 下载文件请求
+message DownloadFileRequest {
+  string bucket_name = 1 [(validate.rules).string.min_len = 1];
+  string file_path = 2 [(validate.rules).string.min_len = 1];
+}
+
+// 下载文件响应
+message DownloadFileReply {
+  bytes content = 1;
+}
+
+// 删除文件请求
+message DeleteFileRequest {
+  string bucket_name = 1 [(validate.rules).string.min_len = 1];
+  string file_path = 2 [(validate.rules).string.min_len = 1];
+}
+
+// 删除文件响应
+message DeleteFileReply {
+  bool success = 1;
+}
+
+// 批量删除文件请求
+message BatchDeleteFilesRequest {
+  string bucket_name = 1 [(validate.rules).string.min_len = 1];
+  repeated string file_paths = 2 [(validate.rules).repeated.min_items = 1];
+}
+
+// 批量删除文件响应
+message BatchDeleteFilesReply {
+  bool success = 1;
+}
+
+// 列出文件请求
+message ListFilesRequest {
+  string bucket_name = 1 [(validate.rules).string.min_len = 1];
+  string prefix = 2;
+}
+
+// 列出文件响应
+message ListFilesReply {
+  repeated string file_paths = 1;
+}
+
+// 合并文件请求
+message MergeFilesRequest {
+  string bucket_name = 1 [(validate.rules).string.min_len = 1];
+  repeated string source_files = 2 [(validate.rules).repeated.min_items = 1];
+  string target_file = 3 [(validate.rules).string.min_len = 1];
+}
+
+// 合并文件响应
+message MergeFilesReply {
+  bool success = 1;
+}
+
+// 写入字符串请求
+message WriteStringRequest {
+  string bucket_name = 1 [(validate.rules).string.min_len = 1];
+  string content = 2;
+  string file_path = 3 [(validate.rules).string.min_len = 1];
+}
+
+// 写入字符串响应
+message WriteStringReply {
+  bool success = 1;
+}
+
+// 读取字符串请求
+message ReadStringRequest {
+  string bucket_name = 1 [(validate.rules).string.min_len = 1];
+  string file_path = 2 [(validate.rules).string.min_len = 1];
+}
+
+// 读取字符串响应
+message ReadStringReply {
+  string content = 1;
+} 

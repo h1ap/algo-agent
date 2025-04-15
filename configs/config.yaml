@@ -10,15 +10,29 @@ data:
     driver: mysql
     source: root:root@tcp(127.0.0.1:3306)/test?parseTime=True&loc=Local
   redis:
-    addr: 127.0.0.1:6379
+    addr: 192.168.110.238:6379
     read_timeout: 0.2s
     write_timeout: 0.2s
   rabbitmq:
-    url: amqp://guest:guest@localhost:5672
+    host: 192.168.110.101
+    port: 5672
+    username: admin
+    password: admin
     vhost: /
-    exchange_name: algo-exchange
-    routing_key: default
-    group: algo-
-    service_queue_prefix: service-
-    node_queue_prefix: node-
-    node_name: algo-agent
+    group: dev
+    default_exchange_name: zh_node_exchange
+    default_routing_key: zh_node_routing
+    service_queue_prefix: _zh_service_
+    node_queue_prefix: _zh_node_
+    node_name: dev-go-written
+    listener:
+      retry_max_attempts: 3
+      retry_initial_interval: 1s
+      retry_multiplier: 2
+      retry_max_interval: 10s
+  docker:
+    host: unix:///var/run/docker.sock
+  oss:
+    endpoint: http://192.168.110.101:9400
+    access_key: 4dd7X0NpMTHZpjkJ8ucl
+    secret_key: sHF4NdInnRgNY17hKMX1ditXkKnJaiUJeykhKHrj

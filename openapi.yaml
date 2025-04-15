@@ -3,17 +3,42 @@
 
 openapi: 3.0.3
 info:
-    title: ""
+    title: OSSService API
+    description: OSS服务接口定义
     version: 0.0.1
 paths:
-    /helloworld/{name}:
+    /v1/oss/batch/delete:
+        post:
+            tags:
+                - OSSService
+            description: 批量删除文件
+            operationId: OSSService_BatchDeleteFiles
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.oss.v1.BatchDeleteFilesRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.oss.v1.BatchDeleteFilesReply'
+    /v1/oss/download/{bucketName}/{filePath}:
         get:
             tags:
-                - Greeter
-            description: Sends a greeting
-            operationId: Greeter_SayHello
+                - OSSService
+            description: 下载文件
+            operationId: OSSService_DownloadFile
             parameters:
-                - name: name
+                - name: bucketName
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: filePath
                   in: path
                   required: true
                   schema:
@@ -24,18 +49,66 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/helloworld.v1.HelloReply'
-    /rabbitmq/message:
+                                $ref: '#/components/schemas/api.oss.v1.DownloadFileReply'
+    /v1/oss/file/{bucketName}/{filePath}:
+        delete:
+            tags:
+                - OSSService
+            description: 删除文件
+            operationId: OSSService_DeleteFile
+            parameters:
+                - name: bucketName
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: filePath
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.oss.v1.DeleteFileReply'
+    /v1/oss/list/{bucketName}/{prefix}:
+        get:
+            tags:
+                - OSSService
+            description: 列出文件
+            operationId: OSSService_ListFiles
+            parameters:
+                - name: bucketName
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: prefix
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.oss.v1.ListFilesReply'
+    /v1/oss/merge:
         post:
             tags:
-                - RabbitMQ
-            description: 发送消息
-            operationId: RabbitMQ_SendMessage
+                - OSSService
+            description: 合并文件
+            operationId: OSSService_MergeFiles
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/rabbitmq.v1.SendMessageRequest'
+                            $ref: '#/components/schemas/api.oss.v1.MergeFilesRequest'
                 required: true
             responses:
                 "200":
@@ -43,18 +116,42 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/rabbitmq.v1.SendMessageReply'
-    /rabbitmq/service:
+                                $ref: '#/components/schemas/api.oss.v1.MergeFilesReply'
+    /v1/oss/read/{bucketName}/{filePath}:
+        get:
+            tags:
+                - OSSService
+            description: 读取字符串
+            operationId: OSSService_ReadString
+            parameters:
+                - name: bucketName
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: filePath
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.oss.v1.ReadStringReply'
+    /v1/oss/temp/upload:
         post:
             tags:
-                - RabbitMQ
-            description: 发送消息到特定服务
-            operationId: RabbitMQ_SendToService
+                - OSSService
+            description: 上传临时文件
+            operationId: OSSService_TempUpload
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/rabbitmq.v1.SendToServiceRequest'
+                            $ref: '#/components/schemas/api.oss.v1.TempUploadRequest'
                 required: true
             responses:
                 "200":
@@ -62,45 +159,166 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/rabbitmq.v1.SendToServiceReply'
+                                $ref: '#/components/schemas/api.oss.v1.TempUploadReply'
+    /v1/oss/upload:
+        post:
+            tags:
+                - OSSService
+            description: 上传文件
+            operationId: OSSService_UploadFile
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.oss.v1.UploadFileRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.oss.v1.UploadFileReply'
+    /v1/oss/write:
+        post:
+            tags:
+                - OSSService
+            description: 写入字符串
+            operationId: OSSService_WriteString
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.oss.v1.WriteStringRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.oss.v1.WriteStringReply'
 components:
     schemas:
-        helloworld.v1.HelloReply:
-            type: object
-            properties:
-                message:
-                    type: string
-            description: The response message containing the greetings
-        rabbitmq.v1.SendMessageReply:
+        api.oss.v1.BatchDeleteFilesReply:
             type: object
             properties:
                 success:
                     type: boolean
-            description: 发送消息响应
-        rabbitmq.v1.SendMessageRequest:
+            description: 批量删除文件响应
+        api.oss.v1.BatchDeleteFilesRequest:
             type: object
             properties:
-                routingKey:
+                bucketName:
                     type: string
-                message:
-                    type: string
-            description: 发送消息请求
-        rabbitmq.v1.SendToServiceReply:
+                filePaths:
+                    type: array
+                    items:
+                        type: string
+            description: 批量删除文件请求
+        api.oss.v1.DeleteFileReply:
             type: object
             properties:
                 success:
                     type: boolean
-            description: 发送消息到服务响应
-        rabbitmq.v1.SendToServiceRequest:
+            description: 删除文件响应
+        api.oss.v1.DownloadFileReply:
             type: object
             properties:
-                service:
+                content:
                     type: string
-                message:
+                    format: bytes
+            description: 下载文件响应
+        api.oss.v1.FileInfo:
+            type: object
+            properties:
+                name:
                     type: string
-            description: 发送消息到服务请求
+                size:
+                    type: string
+                contentType:
+                    type: string
+                content:
+                    type: string
+                    format: bytes
+            description: 文件信息
+        api.oss.v1.ListFilesReply:
+            type: object
+            properties:
+                filePaths:
+                    type: array
+                    items:
+                        type: string
+            description: 列出文件响应
+        api.oss.v1.MergeFilesReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: 合并文件响应
+        api.oss.v1.MergeFilesRequest:
+            type: object
+            properties:
+                bucketName:
+                    type: string
+                sourceFiles:
+                    type: array
+                    items:
+                        type: string
+                targetFile:
+                    type: string
+            description: 合并文件请求
+        api.oss.v1.ReadStringReply:
+            type: object
+            properties:
+                content:
+                    type: string
+            description: 读取字符串响应
+        api.oss.v1.TempUploadReply:
+            type: object
+            properties:
+                filePath:
+                    type: string
+            description: 上传临时文件响应
+        api.oss.v1.TempUploadRequest:
+            type: object
+            properties:
+                bucketName:
+                    type: string
+                file:
+                    $ref: '#/components/schemas/api.oss.v1.FileInfo'
+            description: 上传临时文件请求
+        api.oss.v1.UploadFileReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: 上传文件响应
+        api.oss.v1.UploadFileRequest:
+            type: object
+            properties:
+                bucketName:
+                    type: string
+                file:
+                    $ref: '#/components/schemas/api.oss.v1.FileInfo'
+                filePath:
+                    type: string
+            description: 上传文件请求
+        api.oss.v1.WriteStringReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: 写入字符串响应
+        api.oss.v1.WriteStringRequest:
+            type: object
+            properties:
+                bucketName:
+                    type: string
+                content:
+                    type: string
+                filePath:
+                    type: string
+            description: 写入字符串请求
 tags:
-    - name: Greeter
-      description: The greeting service definition.
-    - name: RabbitMQ
-      description: RabbitMQ服务定义
+    - name: OSSService

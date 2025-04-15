@@ -1,8 +1,7 @@
 package server
 
 import (
-	v1 "algo-agent/api/helloworld/v1"
-	rabbitmqv1 "algo-agent/api/rabbitmq/v1"
+	"algo-agent/api/oss/v1"
 	"algo-agent/internal/conf"
 	"algo-agent/internal/service"
 
@@ -12,7 +11,7 @@ import (
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, greeter *service.GreeterService, rabbitmq *service.RabbitMQService, logger log.Logger) *grpc.Server {
+func NewGRPCServer(c *conf.Server, s *service.OSSServer, logger log.Logger) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
@@ -28,7 +27,6 @@ func NewGRPCServer(c *conf.Server, greeter *service.GreeterService, rabbitmq *se
 		opts = append(opts, grpc.Timeout(c.Grpc.Timeout.AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
-	v1.RegisterGreeterServer(srv, greeter)
-	rabbitmqv1.RegisterRabbitMQServer(srv, rabbitmq)
+	v1.RegisterOSSServiceServer(srv, s)
 	return srv
 }
