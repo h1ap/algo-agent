@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package api.deploy.v1;
+
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "algo-agent/api/deploy/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.deploy.v1";
+
+// 部署服务接口定义
+service DeployService {
+  // 部署服务
+  rpc Deploy (DeployRequest) returns (DeployReply) {
+    option (google.api.http) = {
+      post: "/deploy/v1"
+      body: "*"
+    };
+  }
+
+  // 销毁服务
+  rpc Destroy (DestroyRequest) returns (DestroyReply) {
+    option (google.api.http) = {
+      delete: "/deploy/v1/destroy"
+    };
+  }
+}
+
+// 部署请求消息
+message DeployRequest {
+  // 推理服务ID
+  string service_id = 1 [(validate.rules).string.min_len = 1];
+  
+  // 推理服务操作
+  int32 op = 2;
+  
+  // 算法脚本所在minio存储桶
+  string algorithm_script_bucket = 3;
+  
+  // 算法脚本所在minio的存储地址
+  string algorithm_script_path = 4;
+  
+  // 推理权重模型所在bucket
+  string model_bucket = 5;
+  
+  // 推理权重模型所在url地址
+  string model_path = 6;
+  
+  // 算法推理用docker image名称
+  string infer_image_name = 7;
+  
+  // 推理用镜像bucket名称
+  string infer_image_bucket = 8;
+  
+  // 推理用docker image在minio的存储地址
+  string infer_image_path = 9;
+  
+  // 标注标签
+  string dataset_label = 10;
+  
+  // 推理服务端口
+  int32 service_port = 11;
+  
+  // 推理服务启动参数
+  repeated string args = 12;
+}
+
+// 部署响应消息
+message DeployReply {
+  string message = 1;
+}
+
+// 销毁请求消息
+message DestroyRequest {
+  string service_id = 1 [(validate.rules).string.min_len = 1];
+}
+
+// 销毁响应消息
+message DestroyReply {
+  string message = 1;
+}
+

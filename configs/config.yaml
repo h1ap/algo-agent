@@ -24,7 +24,7 @@ data:
     default_routing_key: zh_node_routing
     service_queue_prefix: _zh_service_
     node_queue_prefix: _zh_node_
-    node_name: dev-go-written
+    node_name: dev-go-design
     listener:
       retry_max_attempts: 3
       retry_initial_interval: 1s
@@ -36,3 +36,8 @@ data:
     endpoint: http://192.168.110.101:9400
     access_key: 4dd7X0NpMTHZpjkJ8ucl
     secret_key: sHF4NdInnRgNY17hKMX1ditXkKnJaiUJeykhKHrj
+  node:
+    node_name: dev-go-design
+    node_host: 192.168.110.238
+    docker_host: host.docker.internal
+  mapping_file_path: /data/node_data/

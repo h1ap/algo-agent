@@ -3,10 +3,304 @@
 
 openapi: 3.0.3
 info:
-    title: OSSService API
-    description: OSS服务接口定义
+    title: ""
     version: 0.0.1
 paths:
+    /deploy/v1:
+        post:
+            tags:
+                - DeployService
+            description: 部署服务
+            operationId: DeployService_Deploy
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.deploy.v1.DeployRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.deploy.v1.DeployReply'
+    /deploy/v1/destroy:
+        delete:
+            tags:
+                - DeployService
+            description: 销毁服务
+            operationId: DeployService_Destroy
+            parameters:
+                - name: serviceId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.deploy.v1.DestroyReply'
+    /v1/docker/container/name/{containerName}/stop:
+        post:
+            tags:
+                - DockerService
+            description: 通过名称停止容器
+            operationId: DockerService_StopContainerByName
+            parameters:
+                - name: containerName
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.docker.v1.StopContainerByNameRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.docker.v1.StopContainerByNameReply'
+    /v1/docker/container/run:
+        post:
+            tags:
+                - DockerService
+            description: 通过镜像和自定义参数运行一个容器
+            operationId: DockerService_RunContainer
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.docker.v1.RunContainerRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.docker.v1.RunContainerReply'
+    /v1/docker/container/run_start:
+        post:
+            tags:
+                - DockerService
+            description: 运行并启动容器，返回容器信息
+            operationId: DockerService_RunAndStartContainer
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.docker.v1.RunAndStartContainerRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.docker.v1.RunAndStartContainerReply'
+    /v1/docker/container/run_start_port:
+        post:
+            tags:
+                - DockerService
+            description: 运行并启动带端口映射的容器
+            operationId: DockerService_RunAndStartContainerWithPort
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.docker.v1.RunAndStartContainerWithPortRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.docker.v1.RunAndStartContainerWithPortReply'
+    /v1/docker/container/{containerId}/logs:
+        get:
+            tags:
+                - DockerService
+            description: 获取指定容器的最后若干行日志
+            operationId: DockerService_GetContainerLastLogs
+            parameters:
+                - name: containerId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: tail
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.docker.v1.GetContainerLastLogsReply'
+    /v1/docker/container/{containerId}/stop:
+        post:
+            tags:
+                - DockerService
+            description: 停止容器
+            operationId: DockerService_StopContainer
+            parameters:
+                - name: containerId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.docker.v1.StopContainerReply'
+    /v1/docker/container/{containerId}/stop_time:
+        get:
+            tags:
+                - DockerService
+            description: 获取容器的停止时间戳
+            operationId: DockerService_GetContainerStopTime
+            parameters:
+                - name: containerId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.docker.v1.GetContainerStopTimeReply'
+    /v1/docker/container/{containerName}:
+        get:
+            tags:
+                - DockerService
+            description: 根据容器名查找容器
+            operationId: DockerService_FindContainerByName
+            parameters:
+                - name: containerName
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.docker.v1.FindContainerByNameReply'
+    /v1/docker/image/import:
+        post:
+            tags:
+                - DockerService
+            description: 导入并标记镜像
+            operationId: DockerService_ImportAndTagImage
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.docker.v1.ImportAndTagImageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.docker.v1.ImportAndTagImageReply'
+    /v1/docker/image/{imageName}:
+        get:
+            tags:
+                - DockerService
+            description: 查找指定名称的镜像
+            operationId: DockerService_FindImageByName
+            parameters:
+                - name: imageName
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.docker.v1.FindImageByNameReply'
+    /v1/mq/queue/send:
+        post:
+            tags:
+                - RabbitMQService
+            description: 发送消息到特定队列
+            operationId: RabbitMQService_SendToQueue
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.rabbitmq.v1.SendToQueueRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.rabbitmq.v1.SendToQueueReply'
+    /v1/mq/send:
+        post:
+            tags:
+                - RabbitMQService
+            description: 发送消息到特定交换机和路由键
+            operationId: RabbitMQService_SendMessage
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.rabbitmq.v1.SendMessageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.rabbitmq.v1.SendMessageReply'
+    /v1/mq/service/send:
+        post:
+            tags:
+                - RabbitMQService
+            description: 发送消息到特定服务
+            operationId: RabbitMQService_SendToService
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.rabbitmq.v1.SendToServiceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.rabbitmq.v1.SendToServiceReply'
     /v1/oss/batch/delete:
         post:
             tags:
@@ -200,6 +494,191 @@ paths:
                                 $ref: '#/components/schemas/api.oss.v1.WriteStringReply'
 components:
     schemas:
+        api.deploy.v1.DeployReply:
+            type: object
+            properties:
+                message:
+                    type: string
+            description: 部署响应消息
+        api.deploy.v1.DeployRequest:
+            type: object
+            properties:
+                serviceId:
+                    type: string
+                    description: 推理服务ID
+                op:
+                    type: integer
+                    description: 推理服务操作
+                    format: int32
+                algorithmScriptBucket:
+                    type: string
+                    description: 算法脚本所在minio存储桶
+                algorithmScriptPath:
+                    type: string
+                    description: 算法脚本所在minio的存储地址
+                modelBucket:
+                    type: string
+                    description: 推理权重模型所在bucket
+                modelPath:
+                    type: string
+                    description: 推理权重模型所在url地址
+                inferImageName:
+                    type: string
+                    description: 算法推理用docker image名称
+                inferImageBucket:
+                    type: string
+                    description: 推理用镜像bucket名称
+                inferImagePath:
+                    type: string
+                    description: 推理用docker image在minio的存储地址
+                datasetLabel:
+                    type: string
+                    description: 标注标签
+                servicePort:
+                    type: integer
+                    description: 推理服务端口
+                    format: int32
+                args:
+                    type: array
+                    items:
+                        type: string
+                    description: 推理服务启动参数
+            description: 部署请求消息
+        api.deploy.v1.DestroyReply:
+            type: object
+            properties:
+                message:
+                    type: string
+            description: 销毁响应消息
+        api.docker.v1.ContainerInfo:
+            type: object
+            properties:
+                containerId:
+                    type: string
+                containerName:
+                    type: string
+            description: 容器信息
+        api.docker.v1.FindContainerByNameReply:
+            type: object
+            properties:
+                container:
+                    $ref: '#/components/schemas/api.docker.v1.ContainerInfo'
+            description: 查找容器响应
+        api.docker.v1.FindImageByNameReply:
+            type: object
+            properties:
+                exists:
+                    type: boolean
+            description: 查找镜像响应
+        api.docker.v1.GetContainerLastLogsReply:
+            type: object
+            properties:
+                logs:
+                    type: string
+            description: 获取容器日志响应
+        api.docker.v1.GetContainerStopTimeReply:
+            type: object
+            properties:
+                stopTime:
+                    type: string
+            description: 获取容器停止时间响应
+        api.docker.v1.ImportAndTagImageReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: 导入并标记镜像响应
+        api.docker.v1.ImportAndTagImageRequest:
+            type: object
+            properties:
+                tarFilePath:
+                    type: string
+                fullImageName:
+                    type: string
+            description: 导入并标记镜像请求
+        api.docker.v1.RunAndStartContainerReply:
+            type: object
+            properties:
+                container:
+                    $ref: '#/components/schemas/api.docker.v1.ContainerInfo'
+            description: 运行并启动容器响应
+        api.docker.v1.RunAndStartContainerRequest:
+            type: object
+            properties:
+                imageName:
+                    type: string
+                hostPath:
+                    type: string
+                containerPath:
+                    type: string
+                scriptPath:
+                    type: string
+                args:
+                    type: array
+                    items:
+                        type: string
+            description: 运行并启动容器请求
+        api.docker.v1.RunAndStartContainerWithPortReply:
+            type: object
+            properties:
+                containerId:
+                    type: string
+            description: 运行并启动带端口映射的容器响应
+        api.docker.v1.RunAndStartContainerWithPortRequest:
+            type: object
+            properties:
+                imageName:
+                    type: string
+                hostPath:
+                    type: string
+                containerPath:
+                    type: string
+                command:
+                    type: string
+                args:
+                    type: array
+                    items:
+                        type: string
+                hostPort:
+                    type: integer
+                    format: int32
+            description: 运行并启动带端口映射的容器请求
+        api.docker.v1.RunContainerReply:
+            type: object
+            properties:
+                containerId:
+                    type: string
+            description: 运行容器响应
+        api.docker.v1.RunContainerRequest:
+            type: object
+            properties:
+                imageName:
+                    type: string
+                customArgs:
+                    type: array
+                    items:
+                        type: string
+            description: 运行容器请求
+        api.docker.v1.StopContainerByNameReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: 通过名称停止容器响应
+        api.docker.v1.StopContainerByNameRequest:
+            type: object
+            properties:
+                containerName:
+                    type: string
+                remove:
+                    type: boolean
+            description: 通过名称停止容器请求
+        api.docker.v1.StopContainerReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: 停止容器响应
         api.oss.v1.BatchDeleteFilesReply:
             type: object
             properties:
@@ -320,5 +799,56 @@ components:
                 filePath:
                     type: string
             description: 写入字符串请求
+        api.rabbitmq.v1.SendMessageReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: 发送消息响应
+        api.rabbitmq.v1.SendMessageRequest:
+            type: object
+            properties:
+                exchangeName:
+                    type: string
+                routingKey:
+                    type: string
+                message:
+                    type: string
+            description: 发送消息请求
+        api.rabbitmq.v1.SendToQueueReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: 发送到队列响应
+        api.rabbitmq.v1.SendToQueueRequest:
+            type: object
+            properties:
+                queueName:
+                    type: string
+                message:
+                    type: string
+            description: 发送到队列请求
+        api.rabbitmq.v1.SendToServiceReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: 发送到服务响应
+        api.rabbitmq.v1.SendToServiceRequest:
+            type: object
+            properties:
+                service:
+                    type: string
+                message:
+                    type: string
+            description: 发送到服务请求
 tags:
+    - name: DeployService
+      description: 部署服务接口定义
+    - name: DockerService
+      description: Docker服务接口定义
     - name: OSSService
+      description: OSS服务接口定义
+    - name: RabbitMQService
+      description: RabbitMQ服务接口定义
