@@ -3,19 +3,21 @@ package biz
 import (
 	"context"
 
+	mc "algo-agent/internal/model/container"
+
 	"github.com/go-kratos/kratos/v2/log"
 )
 
 // DockerService Docker服务接口
 type DockerService interface {
 	// FindContainerByName 根据容器名查找容器
-	FindContainerByName(ctx context.Context, containerName string) (*ContainerInfo, error)
+	FindContainerByName(ctx context.Context, containerName string) (*mc.ContainerInfo, error)
 
 	// RunContainer 通过镜像和自定义参数运行一个容器
 	RunContainer(ctx context.Context, imageName string, customArgs []string) (string, error)
 
 	// RunAndStartContainer 运行并启动容器，返回容器信息
-	RunAndStartContainer(ctx context.Context, imageName, hostPath, containerPath, scriptPath string, args []string) (*ContainerInfo, error)
+	RunAndStartContainer(ctx context.Context, imageName, hostPath, containerPath, scriptPath string, args []string) (*mc.ContainerInfo, error)
 
 	// RunAndStartContainerWithPort 运行并启动带端口映射的容器
 	RunAndStartContainerWithPort(ctx context.Context, imageName, hostPath, containerPath, command string, args []string, hostPort int) (string, error)
@@ -55,7 +57,7 @@ type DockerUsecase struct {
 }
 
 // FindContainerByName 根据容器名查找容器
-func (uc *DockerUsecase) FindContainerByName(ctx context.Context, containerName string) (*ContainerInfo, error) {
+func (uc *DockerUsecase) FindContainerByName(ctx context.Context, containerName string) (*mc.ContainerInfo, error) {
 	uc.log.WithContext(ctx).Infof("FindContainerByName: containerName=%s", containerName)
 	return uc.docker.FindContainerByName(ctx, containerName)
 }
@@ -67,7 +69,7 @@ func (uc *DockerUsecase) RunContainer(ctx context.Context, imageName string, cus
 }
 
 // RunAndStartContainer 运行并启动容器，返回容器信息
-func (uc *DockerUsecase) RunAndStartContainer(ctx context.Context, imageName, hostPath, containerPath, scriptPath string, args []string) (*ContainerInfo, error) {
+func (uc *DockerUsecase) RunAndStartContainer(ctx context.Context, imageName, hostPath, containerPath, scriptPath string, args []string) (*mc.ContainerInfo, error) {
 	uc.log.WithContext(ctx).Infof("RunAndStartContainer: imageName=%s, hostPath=%s, containerPath=%s", imageName, hostPath, containerPath)
 	return uc.docker.RunAndStartContainer(ctx, imageName, hostPath, containerPath, scriptPath, args)
 }

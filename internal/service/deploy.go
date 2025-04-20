@@ -15,9 +15,18 @@ type DeployServer struct {
 	log *log.Helper
 }
 
-func (s *DeployServer) Deploy(ctx context.Context, req *pb.DeployRequest) (*pb.DeployRequest, error) {
+func (d *DeployServer) Deploy(ctx context.Context, req *pb.DeployRequest) (*pb.DeployReply, error) {
 	jsonStr, _ := json.ToJSON(req)
-	s.log.WithContext(ctx).Infof("Deploy: %v", jsonStr)
+	d.log.WithContext(ctx).Infof("Deploy: %v", jsonStr)
 
-	return &pb.DeployRequest{}, nil
+	err := d.uc.Deploy(ctx, req)
+	if err != nil {
+		d.log.WithContext(ctx).Errorf("Deploy failed: %v", err)
+		return nil, err
+	}
+
+	return &pb.DeployReply{
+		Code: 200,
+		Msg:  "success",
+	}, nil
 }
