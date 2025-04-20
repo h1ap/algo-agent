@@ -32,3 +32,14 @@ func EnsureDirectoryExists(directoryPath string) (bool, error) {
 
 	return true, nil
 }
+
+// RemoveDirectory 删除指定的目录及其中的所有内容
+//
+// 参数：
+//   - directoryPath: 要删除的目录路径
+//
+// 返回值：
+//   - error: 如果发生错误，返回相应的错误信息
+func RemoveDirectory(directoryPath string) error {
+	return os.RemoveAll(directoryPath)
+}

@@ -170,8 +170,13 @@ func (x *DeployRequest) GetArgs() []string {
 
 // 部署响应消息
 type DeployReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 推理服务 ID
+	ServiceId string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// 推理服务状态
+	ServiceStatus int32 `protobuf:"varint,2,opt,name=service_status,json=serviceStatus,proto3" json:"service_status,omitempty"`
+	// 备注
+	Remark        string `protobuf:"bytes,3,opt,name=remark,proto3" json:"remark,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -206,9 +211,23 @@ func (*DeployReply) Descriptor() ([]byte, []int) {
 	return file_deploy_v1_deploy_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *DeployReply) GetMessage() string {
+func (x *DeployReply) GetServiceId() string {
 	if x != nil {
-		return x.Message
+		return x.ServiceId
+	}
+	return ""
+}
+
+func (x *DeployReply) GetServiceStatus() int32 {
+	if x != nil {
+		return x.ServiceStatus
+	}
+	return 0
+}
+
+func (x *DeployReply) GetRemark() string {
+	if x != nil {
+		return x.Remark
 	}
 	return ""
 }
@@ -323,9 +342,12 @@ const file_deploy_v1_deploy_proto_rawDesc = "" +
 	"\rdataset_label\x18\n" +
 	" \x01(\tR\fdatasetLabel\x12!\n" +
 	"\fservice_port\x18\v \x01(\x05R\vservicePort\x12\x12\n" +
-	"\x04args\x18\f \x03(\tR\x04args\"'\n" +
-	"\vDeployReply\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\"8\n" +
+	"\x04args\x18\f \x03(\tR\x04args\"k\n" +
+	"\vDeployReply\x12\x1d\n" +
+	"\n" +
+	"service_id\x18\x01 \x01(\tR\tserviceId\x12%\n" +
+	"\x0eservice_status\x18\x02 \x01(\x05R\rserviceStatus\x12\x16\n" +
+	"\x06remark\x18\x03 \x01(\tR\x06remark\"8\n" +
 	"\x0eDestroyRequest\x12&\n" +
 	"\n" +
 	"service_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\tserviceId\"(\n" +

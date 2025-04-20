@@ -40,4 +40,9 @@ data:
     node_name: dev-go-design
     node_host: 192.168.110.238
     docker_host: host.docker.internal
-  mapping_file_path: /data/node_data/
+  mapping_file_path: /data/node_data
+  services:
+    # 训练服务
+    train: zhihua-intellitrain
+    # 部署服务
+    deploy: zhihua-intellideploy

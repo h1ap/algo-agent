@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package api.train.v1;
+
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "algo-agent/api/train/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.train.v1";
+
+// Docker测试服务定义
+service DockerTestService {
+  // 停止容器
+  rpc StopContainer(StopContainerRequest) returns (StopContainerResponse) {
+    option (google.api.http) = {
+      get: "/docker/stop"
+    };
+  }
+  
+  // 查找镜像
+  rpc FindImage(FindImageRequest) returns (FindImageResponse) {
+    option (google.api.http) = {
+      get: "/docker/findImage"
+    };
+  }
+}
+
+// 停止容器请求
+message StopContainerRequest {
+  // 容器名称
+  string name = 1 [(validate.rules).string.min_len = 1];
+}
+
+// 停止容器响应
+message StopContainerResponse {
+  // 操作结果消息
+  string message = 1;
+  // 容器ID，如果找到
+  string container_id = 2;
+  // 操作是否成功
+  bool success = 3;
+}
+
+// 查找镜像请求
+message FindImageRequest {
+  // 镜像名称
+  string name = 1 [(validate.rules).string.min_len = 1];
+}
+
+// 查找镜像响应
+message FindImageResponse {
+  // 操作结果消息
+  string message = 1;
+  // 镜像ID，如果找到
+  string image_id = 2;
+  // 操作是否成功
+  bool success = 3;
+}
+

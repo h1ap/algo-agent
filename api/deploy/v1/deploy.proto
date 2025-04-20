@@ -68,7 +68,14 @@ message DeployRequest {
 
 // 部署响应消息
 message DeployReply {
-  string message = 1;
+  // 推理服务 ID
+  string service_id = 1;
+
+  // 推理服务状态
+  int32 service_status = 2;
+
+  // 备注
+  string remark = 3;
 }
 
 // 销毁请求消息

@@ -72,6 +72,10 @@ message Data {
     string node_host = 2;
     string docker_host = 3;
   }
+  message Services {
+    string train = 1;
+    string deploy = 2;
+  }
   Database database = 1;
   Redis redis = 2;
   RabbitMQ rabbitmq = 3;
@@ -79,4 +83,5 @@ message Data {
   Docker docker = 5;
   Node node = 6;
   string mapping_file_path = 7;
+  Services services = 8;
 }

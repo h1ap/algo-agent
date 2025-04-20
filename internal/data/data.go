@@ -1,7 +1,6 @@
 package data
 
 import (
-	"algo-agent/internal/biz"
 	"algo-agent/internal/conf"
 	"context"
 	"errors"
@@ -51,7 +50,7 @@ func NewData(c *conf.Data, ossRepo *OSSRepo, rabbitMQRepo *RabbitMQRepo, dockerR
 }
 
 // NewOSSService 创建一个新的OSS客户端，适配biz.OSSStore接口
-func NewOSSRepo(c *conf.Data, logger log.Logger) (biz.OSSStore, error) {
+func NewOSSRepo(c *conf.Data, logger log.Logger) (*OSSRepo, error) {
 	l := log.NewHelper(log.With(logger, "module", "data/oss"))
 
 	mc := c.Oss
@@ -79,7 +78,7 @@ func NewOSSRepo(c *conf.Data, logger log.Logger) (biz.OSSStore, error) {
 }
 
 // NewRabbitMQRepo 创建一个新的RabbitMQ客户端，适配biz.MQSender接口
-func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (biz.MQSender, error) {
+func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (*RabbitMQRepo, error) {
 	l := log.NewHelper(log.With(logger, "module", "data/rabbitmq"))
 	rabbitLogger := &rabbitLogger{log: l}
 
@@ -158,7 +157,7 @@ func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (biz.MQSender, error) {
 }
 
 // NewDockerRepo 创建一个新的Docker客户端，适配biz.DockerService接口
-func NewDockerRepo(c *conf.Data, logger log.Logger) (biz.DockerService, error) {
+func NewDockerRepo(c *conf.Data, logger log.Logger) (*DockerRepo, error) {
 	l := log.NewHelper(log.With(logger, "module", "data/docker"))
 
 	dockerConf := c.Docker

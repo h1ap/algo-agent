@@ -6,12 +6,6 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 )
 
-// ContainerInfo 容器信息模型
-type ContainerInfo struct {
-	ContainerID   string
-	ContainerName string
-}
-
 // DockerService Docker服务接口
 type DockerService interface {
 	// FindContainerByName 根据容器名查找容器

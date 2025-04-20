@@ -43,6 +43,44 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.deploy.v1.DestroyReply'
+    /docker/findImage:
+        get:
+            tags:
+                - DockerTestService
+            description: 查找镜像
+            operationId: DockerTestService_FindImage
+            parameters:
+                - name: name
+                  in: query
+                  description: 镜像名称
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.train.v1.FindImageResponse'
+    /docker/stop:
+        get:
+            tags:
+                - DockerTestService
+            description: 停止容器
+            operationId: DockerTestService_StopContainer
+            parameters:
+                - name: name
+                  in: query
+                  description: 容器名称
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.train.v1.StopContainerResponse'
     /v1/docker/container/name/{containerName}/stop:
         post:
             tags:
@@ -497,8 +535,16 @@ components:
         api.deploy.v1.DeployReply:
             type: object
             properties:
-                message:
+                serviceId:
                     type: string
+                    description: 推理服务 ID
+                serviceStatus:
+                    type: integer
+                    description: 推理服务状态
+                    format: int32
+                remark:
+                    type: string
+                    description: 备注
             description: 部署响应消息
         api.deploy.v1.DeployRequest:
             type: object
@@ -843,11 +889,39 @@ components:
                 message:
                     type: string
             description: 发送到服务请求
+        api.train.v1.FindImageResponse:
+            type: object
+            properties:
+                message:
+                    type: string
+                    description: 操作结果消息
+                imageId:
+                    type: string
+                    description: 镜像ID，如果找到
+                success:
+                    type: boolean
+                    description: 操作是否成功
+            description: 查找镜像响应
+        api.train.v1.StopContainerResponse:
+            type: object
+            properties:
+                message:
+                    type: string
+                    description: 操作结果消息
+                containerId:
+                    type: string
+                    description: 容器ID，如果找到
+                success:
+                    type: boolean
+                    description: 操作是否成功
+            description: 停止容器响应
 tags:
     - name: DeployService
       description: 部署服务接口定义
     - name: DockerService
       description: Docker服务接口定义
+    - name: DockerTestService
+      description: Docker测试服务定义
     - name: OSSService
       description: OSS服务接口定义
     - name: RabbitMQService

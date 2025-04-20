@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -285,6 +286,53 @@ func (r *OSSRepo) ReadString(ctx context.Context, bucketName string, filePath st
 	return string(data), nil
 }
 
+// DownloadSingleFile 下载单个文件到指定路径
+func (r *OSSRepo) DownloadSingleFile(ctx context.Context, bucketName, objectName, destinationPath, fileName string) error {
+	r.log.WithContext(ctx).Infof("DownloadSingleFile: objectName=%s, destinationPath=%s", objectName, destinationPath)
+
+	// 如果文件名为空，沿用对象名中的文件名
+	if fileName == "" {
+		fileName = filepath.Base(objectName) // 提取对象中的文件名
+	}
+
+	// 拼接完整的目标文件路径
+	destinationFile := filepath.Join(destinationPath, fileName)
+
+	// 确保目标目录存在
+	parentDir := filepath.Dir(destinationFile)
+	if err := os.MkdirAll(parentDir, 0755); err != nil {
+		r.log.WithContext(ctx).Errorf("failed to create destination directory: %v", err)
+		return err
+	}
+
+	// 下载文件
+	obj, err := r.client.GetObject(ctx, bucketName, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		r.log.WithContext(ctx).Errorf("failed to get object for download: %v", err)
+		return err
+	}
+	defer obj.Close()
+
+	// 创建目标文件
+	file, err := os.Create(destinationFile)
+	if err != nil {
+		r.log.WithContext(ctx).Errorf("failed to create destination file: %v", err)
+		return err
+	}
+	defer file.Close()
+
+	// 复制内容
+	buffer := make([]byte, 1024)
+	_, err = io.CopyBuffer(file, obj, buffer)
+	if err != nil {
+		r.log.WithContext(ctx).Errorf("failed to copy file content: %v", err)
+		return err
+	}
+
+	r.log.WithContext(ctx).Infof("successfully downloaded file: %s to %s", objectName, destinationFile)
+	return nil
+}
+
 // Close 关闭连接
 func (r *OSSRepo) Close() {
 	// MinIO客户端不需要显式关闭
@@ -325,3 +373,7 @@ func (r *progressReader) Read(p []byte) (n int, err error) {
 	}
 	return
 }
+
+// 示例代码：
+// modelPath := deployRequest.ModelPath
+// fileName := filepath.Base(modelPath) // 提取文件路径中的文件名部分

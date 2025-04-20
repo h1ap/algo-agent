@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"algo-agent/internal/biz"
 	"algo-agent/internal/conf"
+	mc "algo-agent/internal/model/container"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -37,7 +37,7 @@ type DockerRepo struct {
 }
 
 // FindContainerByName 根据容器名查找容器
-func (r *DockerRepo) FindContainerByName(ctx context.Context, containerName string) (*biz.ContainerInfo, error) {
+func (r *DockerRepo) FindContainerByName(ctx context.Context, containerName string) (*mc.ContainerInfo, error) {
 	// Docker API的容器名称前面会加"/"
 	dockerAPIContainerName := "/" + containerName
 
@@ -56,7 +56,7 @@ func (r *DockerRepo) FindContainerByName(ctx context.Context, containerName stri
 	for _, c := range containers {
 		for _, name := range c.Names {
 			if name == dockerAPIContainerName {
-				return &biz.ContainerInfo{
+				return &mc.ContainerInfo{
 					ContainerID:   c.ID,
 					ContainerName: strings.TrimPrefix(name, "/"),
 				}, nil
@@ -98,7 +98,7 @@ func (r *DockerRepo) RunContainer(ctx context.Context, imageName string, customA
 }
 
 // RunAndStartContainer 运行并启动容器，返回容器信息
-func (r *DockerRepo) RunAndStartContainer(ctx context.Context, imageName, hostPath, containerPath, scriptPath string, args []string) (*biz.ContainerInfo, error) {
+func (r *DockerRepo) RunAndStartContainer(ctx context.Context, imageName, hostPath, containerPath, scriptPath string, args []string) (*mc.ContainerInfo, error) {
 	// 配置主机卷挂载
 	hostConfig := &container.HostConfig{
 		Mounts: []mount.Mount{
@@ -178,7 +178,7 @@ func (r *DockerRepo) RunAndStartContainer(ctx context.Context, imageName, hostPa
 		containerName = containerName[1:]
 	}
 
-	return &biz.ContainerInfo{
+	return &mc.ContainerInfo{
 		ContainerID:   resp.ID,
 		ContainerName: containerName,
 	}, nil
