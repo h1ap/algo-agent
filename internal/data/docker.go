@@ -556,6 +556,24 @@ func (r *DockerRepo) FindImageByName(ctx context.Context, imageName string) (boo
 	return false, nil
 }
 
+// GetContainerState 获取容器状态
+func (r *DockerRepo) GetContainerState(ctx context.Context, containerID string) (*mc.ContainerState, error) {
+	r.log.WithContext(ctx).Infof("GetContainerState: containerID=%s", containerID)
+
+	inspect, err := r.client.ContainerInspect(ctx, containerID)
+	if err != nil {
+		r.log.WithContext(ctx).Errorf("failed to inspect container: %v", err)
+		return nil, err
+	}
+
+	// 返回容器状态
+	return &mc.ContainerState{
+		ContainerID: containerID,
+		State:       inspect.State.Status,
+		ExitCode:    inspect.State.ExitCode,
+	}, nil
+}
+
 // ImportAndTagImage 导入并标记镜像
 func (r *DockerRepo) ImportAndTagImage(ctx context.Context, tarFilePath, fullImageName string) error {
 	if _, err := os.Stat(tarFilePath); err != nil {
@@ -600,7 +618,7 @@ func (r *DockerRepo) ImportAndTagImage(ctx context.Context, tarFilePath, fullIma
 	}
 
 	// 导入镜像
-	resp, err := r.client.ImageLoad(ctx, file)
+	resp, err := r.client.ImageLoad(ctx, file, false)
 	if err != nil {
 		r.log.WithContext(ctx).Errorf("failed to import image: %v", err)
 		return err

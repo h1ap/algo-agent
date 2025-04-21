@@ -23,15 +23,33 @@ import (
 // Injectors from wire.go:
 
 func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*kratos.App, func(), error) {
-	ossStore, err := data.NewOSSRepo(confData, logger)
+	ossService, err := data.NewOSSRepo(confData, logger)
 	if err != nil {
 		return nil, nil, err
 	}
-	ossUsecase := biz.NewOSSUsecase(ossStore, logger)
+	ossUsecase := biz.NewOSSUsecase(ossService, logger)
 	ossServer := service.NewOSSServer(ossUsecase, logger)
-	grpcServer := server.NewGRPCServer(confServer, ossServer, logger)
-	httpServer := server.NewHTTPServer(confServer, ossServer, logger)
-	app := newApp(logger, grpcServer, httpServer)
+	deployServiceManager, err := data.NewDeployServiceManagerRepo(confData, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	mqService, err := data.NewRabbitMQRepo(confData, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	dockerService, err := data.NewDockerRepo(confData, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	deployUsecase := biz.NewDeployUsecase(confData, deployServiceManager, mqService, dockerService, ossService, logger)
+	deployServer := service.NewDeployServer(deployUsecase, logger)
+	grpcServer := server.NewGRPCServer(confServer, ossServer, deployServer, logger)
+	httpServer := server.NewHTTPServer(confServer, ossServer, deployServer, logger)
+	gpuManager := data.NewNvidiaGpuManager(logger)
+	gpuUsecase := biz.NewGpuUsecase(confData, gpuManager, mqService, logger)
+	jobServer := service.NewJobServer(gpuUsecase, logger)
+	jobJobServer := server.NewJobServer(jobServer)
+	app := newApp(logger, grpcServer, httpServer, jobJobServer)
 	return app, func() {
 	}, nil
 }

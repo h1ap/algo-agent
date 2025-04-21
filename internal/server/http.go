@@ -1,7 +1,8 @@
 package server
 
 import (
-	v1 "algo-agent/api/oss/v1"
+	dv1 "algo-agent/api/deploy/v1"
+	ov1 "algo-agent/api/oss/v1"
 	"algo-agent/internal/conf"
 	"algo-agent/internal/service"
 
@@ -11,7 +12,12 @@ import (
 )
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, s *service.OSSServer, logger log.Logger) *http.Server {
+func NewHTTPServer(
+	c *conf.Server,
+	s *service.OSSServer,
+	d *service.DeployServer,
+	logger log.Logger,
+) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
@@ -27,6 +33,7 @@ func NewHTTPServer(c *conf.Server, s *service.OSSServer, logger log.Logger) *htt
 		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
-	v1.RegisterOSSServiceHTTPServer(srv, s)
+	ov1.RegisterOSSServiceHTTPServer(srv, s)
+	dv1.RegisterDeployServiceHTTPServer(srv, d)
 	return srv
 }

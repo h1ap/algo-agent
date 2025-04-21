@@ -4,11 +4,7 @@ import (
 	v1 "algo-agent/api/deploy/v1"
 	"algo-agent/internal/cons/file"
 	taskArgs "algo-agent/internal/cons/task"
-	"algo-agent/internal/data"
-	ddr "algo-agent/internal/data/deploy"
-	dir "algo-agent/internal/utils"
-	json "algo-agent/internal/utils"
-	zip "algo-agent/internal/utils"
+	"algo-agent/internal/utils"
 	"context"
 	"errors"
 	"fmt"
@@ -24,11 +20,11 @@ import (
 )
 
 type DeployUsecase struct {
-	dsm *ddr.DeployServiceManager
+	dsm DeployServiceManager
 
-	rmr *data.RabbitMQRepo
-	dr  *data.DockerRepo
-	or  *data.OSSRepo
+	mq  MqService
+	d   DockerService
+	oss OSSService
 
 	log *log.Helper
 
@@ -39,28 +35,28 @@ type DeployUsecase struct {
 	dsn string // 部署服务名称
 }
 
-func (duc *DeployUsecase) editServiceAndSendMq(ctx context.Context, serivce di.DeployServiceInfo) error {
-	duc.dsm.UpdateService(serivce)
+func (duc *DeployUsecase) editServiceAndSendMq(ctx context.Context, serivce *di.DeployServiceInfo) error {
+	duc.dsm.UpdateService(ctx, serivce)
 	return duc.sendStatusChangeMessage(ctx, serivce)
 }
 
-func (duc *DeployUsecase) sendStatusChangeMessage(ctx context.Context, serivce di.DeployServiceInfo) error {
+func (duc *DeployUsecase) sendStatusChangeMessage(ctx context.Context, serivce *di.DeployServiceInfo) error {
 	reply := &v1.DeployReply{
 		ServiceId:     serivce.ServiceId,
 		ServiceStatus: serivce.ServiceStatus,
 		Remark:        serivce.Remark,
 	}
 
-	jsonStr, err := json.ToJSON(reply)
+	jsonStr, err := utils.ToJSON(reply)
 	if err != nil {
 		return fmt.Errorf("转换为JSON失败: %v", err)
 	}
 
-	return duc.rmr.SendToService(ctx, duc.dsn, jsonStr)
+	return duc.mq.SendToService(ctx, duc.dsn, jsonStr)
 }
 
 // 部署一个推理服务
-func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo di.DeployServiceInfo) error {
+func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo *di.DeployServiceInfo) error {
 	duc.log.Infof("开始部署服务，服务ID: %s", serviceInfo.ServiceId)
 
 	// 验证服务ID
@@ -77,7 +73,7 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo di.DeployServi
 	// 设置服务状态为"正在部署"
 	duc.log.Info("设置服务状态为'正在部署'")
 	serviceInfo.ServiceStatus = ds.DEPLOYING.Code // DEPLOYING 状态码
-	if err := duc.dsm.AddService(serviceInfo); err != nil {
+	if err := duc.dsm.AddService(ctx, serviceInfo); err != nil {
 		return fmt.Errorf("添加服务失败: %v", err)
 	}
 
@@ -89,12 +85,12 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo di.DeployServi
 	// 创建必要的目录
 	deployBasePath := filepath.Join(duc.filePath, file.DEPLOY)
 	imagePath := filepath.Join(duc.filePath, file.IMAGE)
-	dir.EnsureDirectoryExists(deployBasePath)
-	dir.EnsureDirectoryExists(imagePath)
+	utils.EnsureDirectoryExists(deployBasePath)
+	utils.EnsureDirectoryExists(imagePath)
 
 	// 检查Docker镜像是否存在
 	duc.log.Infof("检查Docker镜像是否存在: %s", deployRequest.InferImageName)
-	imageExists, err := duc.dr.FindImageByName(ctx, deployRequest.InferImageName)
+	imageExists, err := duc.d.FindImageByName(ctx, deployRequest.InferImageName)
 	if err != nil || !imageExists {
 		duc.log.Info("本地未找到Docker镜像，准备下载")
 		serviceInfo.ServiceStatus = ds.DOWNLOAD_DEPLOY_IMAGE.Code // DOWNLOAD_DEPLOY_IMAGE 状态码
@@ -105,7 +101,7 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo di.DeployServi
 		// 下载镜像文件
 		imageFileName := strings.Replace(deployRequest.InferImageName, ":", "-", -1)
 		tarPath := filepath.Join(imagePath, imageFileName+".tar")
-		err = duc.or.DownloadSingleFile(
+		err = duc.oss.DownloadSingleFile(
 			ctx,
 			deployRequest.InferImageBucket,
 			deployRequest.InferImagePath,
@@ -117,7 +113,7 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo di.DeployServi
 		}
 
 		// 导入镜像
-		err = duc.dr.ImportAndTagImage(ctx, tarPath, deployRequest.InferImageName)
+		err = duc.d.ImportAndTagImage(ctx, tarPath, deployRequest.InferImageName)
 		if err != nil {
 			return fmt.Errorf("导入镜像失败: %v", err)
 		}
@@ -137,7 +133,7 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo di.DeployServi
 
 	scriptZipFile := "script_" + serviceInfo.ServiceId + ".zip"
 	// 下载算法脚本
-	err = duc.or.DownloadSingleFile(
+	err = duc.oss.DownloadSingleFile(
 		ctx,
 		deployRequest.AlgorithmScriptBucket,
 		deployRequest.AlgorithmScriptPath,
@@ -152,7 +148,7 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo di.DeployServi
 	duc.log.Info("解压算法脚本")
 	scriptZipPath := filepath.Join(taskPath, scriptZipFile)
 	scriptDestPath := filepath.Join(taskPath, file.SCRIPT)
-	if err := zip.Unzip(scriptZipPath, scriptDestPath); err != nil {
+	if err := utils.Unzip(scriptZipPath, scriptDestPath); err != nil {
 		return fmt.Errorf("解压算法脚本失败: %v", err)
 	}
 
@@ -164,11 +160,11 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo di.DeployServi
 	}
 
 	modelDir := filepath.Join(taskPath, file.MODEL)
-	dir.EnsureDirectoryExists(modelDir)
+	utils.EnsureDirectoryExists(modelDir)
 
 	if deployRequest.ModelBucket != "" && deployRequest.ModelPath != "" {
 		duc.log.Info("从MinIO下载模型文件")
-		err = duc.or.DownloadSingleFile(
+		err = duc.oss.DownloadSingleFile(
 			ctx,
 			deployRequest.ModelBucket,
 			deployRequest.ModelPath,
@@ -205,7 +201,7 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo di.DeployServi
 
 	// 启动容器
 	duc.log.Infof("使用镜像启动容器: %s", deployRequest.InferImageName)
-	containerInfo, err := duc.dr.RunAndStartContainer(
+	containerInfo, err := duc.d.RunAndStartContainer(
 		ctx,
 		deployRequest.InferImageName,
 		hostPath,
@@ -226,7 +222,7 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo di.DeployServi
 
 func addLabels(datasetLabel string, args *[]string) {
 	// 解析JSON字符串为map
-	stringObjectMap, err := json.ParseToMap(datasetLabel)
+	stringObjectMap, err := utils.ParseToMap(datasetLabel)
 	if err != nil {
 		// 如果解析失败，直接返回
 		return
@@ -268,14 +264,14 @@ func addLabels(datasetLabel string, args *[]string) {
 }
 
 // DestroyAndDelete 销毁容器，并删除相关文件
-func (duc *DeployUsecase) DestroyAndDelete(ctx context.Context, serviceId string) {
+func (duc *DeployUsecase) DestroyAndDelete(ctx context.Context, serviceId string) error {
 	duc.log.Infof("开始销毁和删除服务，服务ID: %s", serviceId)
 
 	// 查找服务信息
-	service := duc.dsm.FindServiceById(serviceId)
+	service := duc.dsm.FindServiceById(ctx, serviceId)
 	if service == nil {
 		duc.log.Warnf("销毁失败，未找到服务。serviceId: %s", serviceId)
-		return
+		return fmt.Errorf("销毁失败，未找到服务。serviceId: %s", serviceId)
 	}
 	duc.log.Infof("找到服务信息: %+v", service)
 
@@ -285,7 +281,7 @@ func (duc *DeployUsecase) DestroyAndDelete(ctx context.Context, serviceId string
 		duc.log.Warnf("销毁失败，服务容器名为空。serviceId: %s", serviceId)
 	} else {
 		duc.log.Infof("停止并移除容器: %s", containerName)
-		err := duc.dr.StopContainerByName(ctx, containerName, true)
+		err := duc.d.StopContainerByName(ctx, containerName, true)
 		if err != nil {
 			duc.log.Errorf("停止容器失败: %v", err)
 		} else {
@@ -297,7 +293,7 @@ func (duc *DeployUsecase) DestroyAndDelete(ctx context.Context, serviceId string
 	storePath := filepath.Join(duc.filePath, file.DEPLOY)
 	taskPath := filepath.Join(storePath, serviceId)
 	duc.log.Infof("删除服务目录: %s", taskPath)
-	err := dir.RemoveDirectory(taskPath)
+	err := utils.RemoveDirectory(taskPath)
 	if err != nil {
 		duc.log.Errorf("删除推理服务目录失败。serviceId: %s, 错误: %v", serviceId, err)
 	} else {
@@ -306,14 +302,15 @@ func (duc *DeployUsecase) DestroyAndDelete(ctx context.Context, serviceId string
 
 	// 删除服务记录
 	duc.log.Infof("从管理器中移除服务, serviceId: %s", serviceId)
-	duc.dsm.RemoveService(serviceId)
+	duc.dsm.RemoveService(ctx, serviceId)
 	duc.log.Infof("服务已成功销毁和删除, serviceId: %s", serviceId)
+	return nil
 }
 
 // CheckTask 检查所有正在运行的任务，监控容器状态
 func (duc *DeployUsecase) CheckTask(ctx context.Context) {
 	duc.log.Info("检查任务...")
-	services := duc.dsm.GetServiceList()
+	services := duc.dsm.GetServiceList(ctx)
 	if len(services) == 0 {
 		duc.log.Info("检查任务, 没有服务")
 		return
@@ -330,14 +327,14 @@ func (duc *DeployUsecase) CheckTask(ctx context.Context) {
 			continue
 		}
 
-		containerInfo, err := duc.dr.FindContainerByName(ctx, containerName)
+		containerInfo, err := duc.d.FindContainerByName(ctx, containerName)
 		if err != nil || containerInfo == nil {
 			duc.log.Infof("检查任务, 未找到容器. serviceId: %s", service.ServiceId)
 			continue
 		}
 
 		// 获取容器状态
-		inspect, err := duc.dr.GetContainerState(ctx, containerInfo.ContainerID)
+		inspect, err := duc.d.GetContainerState(ctx, containerInfo.ContainerID)
 		if err != nil {
 			duc.log.Errorf("获取容器状态失败: %v", err)
 			continue
@@ -350,7 +347,7 @@ func (duc *DeployUsecase) CheckTask(ctx context.Context) {
 			duc.log.Infof("容器状态异常，终止任务: %s", containerName)
 
 			// 获取容器最后的日志
-			logs, err := duc.dr.GetContainerLastLogs(ctx, containerInfo.ContainerID, 10)
+			logs, err := duc.d.GetContainerLastLogs(ctx, containerInfo.ContainerID, 10)
 			if err != nil {
 				duc.log.Errorf("获取容器日志失败: %v", err)
 			} else {
@@ -389,10 +386,7 @@ func (duc *DeployUsecase) HandleEvent(ctx context.Context, deployMessage *v1.Dep
 	serviceId := deployMessage.GetServiceId()
 
 	// 创建服务信息
-	serviceInfo := di.DeployServiceInfo{
-		ServiceId:     serviceId,
-		DeployRequest: deployMessage,
-	}
+	serviceInfo := di.NewDeployServiceInfo(deployMessage)
 
 	// 处理部署操作
 	if deployMessage.GetOp() == ds.DEPLOY.Code {
@@ -409,10 +403,10 @@ func (duc *DeployUsecase) HandleEvent(ctx context.Context, deployMessage *v1.Dep
 	} else if deployMessage.GetOp() == ds.DESTROY.Code {
 		duc.log.Infof("收到销毁操作请求，serviceId: %s", serviceId)
 
-		service := duc.dsm.FindServiceById(serviceId)
+		service := duc.dsm.FindServiceById(ctx, serviceId)
 		if service == nil {
 			duc.log.Warnf("销毁失败，未找到服务。serviceId: %s", serviceId)
-			emptyService := di.DeployServiceInfo{
+			emptyService := &di.DeployServiceInfo{
 				ServiceId:     serviceId,
 				ServiceStatus: ds.DESTROYED.Code,
 				Remark:        "未找到服务!",
@@ -423,7 +417,7 @@ func (duc *DeployUsecase) HandleEvent(ctx context.Context, deployMessage *v1.Dep
 
 		duc.DestroyAndDelete(ctx, serviceId)
 		service.ServiceStatus = ds.DESTROYED.Code
-		duc.sendStatusChangeMessage(ctx, *service)
+		duc.sendStatusChangeMessage(ctx, service)
 	} else {
 		duc.log.Errorf("未知的任务操作! op: %d, serviceId: %s", deployMessage.GetOp(), serviceId)
 	}

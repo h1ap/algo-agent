@@ -1,4 +1,4 @@
-package gpu
+package data
 
 import (
 	"algo-agent/internal/cons/gpu"
@@ -14,13 +14,6 @@ import (
 // NvidiaGpuManager NVIDIA GPU管理器实现
 type NvidiaGpuManager struct {
 	log *log.Helper
-}
-
-// NewNvidiaGpuManager 创建一个新的NVIDIA GPU管理器
-func NewNvidiaGpuManager(log *log.Helper) *NvidiaGpuManager {
-	return &NvidiaGpuManager{
-		log: log,
-	}
 }
 
 // GetGpuInfo 获取GPU信息

@@ -46,6 +46,9 @@ type DockerService interface {
 	// ImportAndTagImage 导入并标记镜像
 	ImportAndTagImage(ctx context.Context, tarFilePath, fullImageName string) error
 
+	// GetContainerState 获取容器状态
+	GetContainerState(ctx context.Context, containerID string) (*mc.ContainerState, error)
+
 	// Close 关闭连接
 	Close()
 }

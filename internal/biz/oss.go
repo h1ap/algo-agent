@@ -31,8 +31,8 @@ type FileProgress struct {
 	ProgressType    int
 }
 
-// OSSStore OSS存储接口
-type OSSStore interface {
+// OSSService OSS存储接口
+type OSSService interface {
 	// TempUpload 上传临时文件
 	TempUpload(ctx context.Context, bucketName string, file *File) (string, error)
 
@@ -69,13 +69,16 @@ type OSSStore interface {
 	// ReadString 读取字符串内容
 	ReadString(ctx context.Context, bucketName string, filePath string) (string, error)
 
+	// DownloadSingleFile 下载单个文件到指定路径
+	DownloadSingleFile(ctx context.Context, bucketName, objectName, destinationPath, fileName string) error
+
 	// Close 关闭连接
 	Close()
 }
 
 // OSSUsecase OSS用例
 type OSSUsecase struct {
-	store OSSStore
+	store OSSService
 	log   *log.Helper
 }
 

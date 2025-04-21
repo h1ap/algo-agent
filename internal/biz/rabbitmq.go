@@ -11,8 +11,8 @@ type Message struct {
 	Content string
 }
 
-// MQSender 消息队列发送接口
-type MQSender interface {
+// MqService 消息队列发送接口
+type MqService interface {
 	// SendMessage 发送字符串消息
 	SendMessage(ctx context.Context, exchangeName, routingKey, message string) error
 
@@ -28,7 +28,7 @@ type MQSender interface {
 
 // RabbitMQUsecase 是RabbitMQ用例
 type RabbitMQUsecase struct {
-	sender MQSender
+	sender MqService
 	log    *log.Helper
 }
 

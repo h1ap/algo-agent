@@ -1,7 +1,8 @@
 package server
 
 import (
-	"algo-agent/api/oss/v1"
+	dv1 "algo-agent/api/deploy/v1"
+	ov1 "algo-agent/api/oss/v1"
 	"algo-agent/internal/conf"
 	"algo-agent/internal/service"
 
@@ -11,7 +12,12 @@ import (
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, s *service.OSSServer, logger log.Logger) *grpc.Server {
+func NewGRPCServer(
+	c *conf.Server,
+	s *service.OSSServer,
+	d *service.DeployServer,
+	logger log.Logger,
+) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
@@ -27,6 +33,7 @@ func NewGRPCServer(c *conf.Server, s *service.OSSServer, logger log.Logger) *grp
 		opts = append(opts, grpc.Timeout(c.Grpc.Timeout.AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
-	v1.RegisterOSSServiceServer(srv, s)
+	ov1.RegisterOSSServiceServer(srv, s)
+	dv1.RegisterDeployServiceServer(srv, d)
 	return srv
 }
