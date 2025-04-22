@@ -2,6 +2,7 @@ package server
 
 import (
 	dv1 "algo-agent/api/deploy/v1"
+	dcv1 "algo-agent/api/docker/v1"
 	ov1 "algo-agent/api/oss/v1"
 	"algo-agent/internal/conf"
 	"algo-agent/internal/service"
@@ -16,6 +17,7 @@ func NewGRPCServer(
 	c *conf.Server,
 	s *service.OSSServer,
 	d *service.DeployServer,
+	ds *service.DockerServer,
 	logger log.Logger,
 ) *grpc.Server {
 	var opts = []grpc.ServerOption{
@@ -35,5 +37,6 @@ func NewGRPCServer(
 	srv := grpc.NewServer(opts...)
 	ov1.RegisterOSSServiceServer(srv, s)
 	dv1.RegisterDeployServiceServer(srv, d)
+	dcv1.RegisterDockerServiceServer(srv, ds)
 	return srv
 }

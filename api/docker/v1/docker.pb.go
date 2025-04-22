@@ -1146,14 +1146,14 @@ const file_docker_v1_docker_proto_rawDesc = "" +
 	"\rtar_file_path\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\vtarFilePath\x12/\n" +
 	"\x0ffull_image_name\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\rfullImageName\"2\n" +
 	"\x16ImportAndTagImageReply\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\x82\f\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\x85\f\n" +
 	"\rDockerService\x12\x98\x01\n" +
 	"\x13FindContainerByName\x12).api.docker.v1.FindContainerByNameRequest\x1a'.api.docker.v1.FindContainerByNameReply\"-\x82\xd3\xe4\x93\x02'\x12%/v1/docker/container/{container_name}\x12y\n" +
 	"\fRunContainer\x12\".api.docker.v1.RunContainerRequest\x1a .api.docker.v1.RunContainerReply\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/v1/docker/container/run\x12\x97\x01\n" +
 	"\x14RunAndStartContainer\x12*.api.docker.v1.RunAndStartContainerRequest\x1a(.api.docker.v1.RunAndStartContainerReply\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/v1/docker/container/run_start\x12\xb4\x01\n" +
 	"\x1cRunAndStartContainerWithPort\x122.api.docker.v1.RunAndStartContainerWithPortRequest\x1a0.api.docker.v1.RunAndStartContainerWithPortReply\".\x82\xd3\xe4\x93\x02(:\x01*\"#/v1/docker/container/run_start_port\x12\x9e\x01\n" +
-	"\x14GetContainerLastLogs\x12*.api.docker.v1.GetContainerLastLogsRequest\x1a(.api.docker.v1.GetContainerLastLogsReply\"0\x82\xd3\xe4\x93\x02*\x12(/v1/docker/container/{container_id}/logs\x12\x89\x01\n" +
-	"\rStopContainer\x12#.api.docker.v1.StopContainerRequest\x1a!.api.docker.v1.StopContainerReply\"0\x82\xd3\xe4\x93\x02*\"(/v1/docker/container/{container_id}/stop\x12\xa5\x01\n" +
+	"\x14GetContainerLastLogs\x12*.api.docker.v1.GetContainerLastLogsRequest\x1a(.api.docker.v1.GetContainerLastLogsReply\"0\x82\xd3\xe4\x93\x02*\x12(/v1/docker/container/{container_id}/logs\x12\x8c\x01\n" +
+	"\rStopContainer\x12#.api.docker.v1.StopContainerRequest\x1a!.api.docker.v1.StopContainerReply\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/v1/docker/container/{container_id}/stop\x12\xa5\x01\n" +
 	"\x13StopContainerByName\x12).api.docker.v1.StopContainerByNameRequest\x1a'.api.docker.v1.StopContainerByNameReply\":\x82\xd3\xe4\x93\x024:\x01*\"//v1/docker/container/name/{container_name}/stop\x12\xa3\x01\n" +
 	"\x14GetContainerStopTime\x12*.api.docker.v1.GetContainerStopTimeRequest\x1a(.api.docker.v1.GetContainerStopTimeReply\"5\x82\xd3\xe4\x93\x02/\x12-/v1/docker/container/{container_id}/stop_time\x12\x84\x01\n" +
 	"\x0fFindImageByName\x12%.api.docker.v1.FindImageByNameRequest\x1a#.api.docker.v1.FindImageByNameReply\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/v1/docker/image/{image_name}\x12\x87\x01\n" +

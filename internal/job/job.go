@@ -2,8 +2,10 @@ package job
 
 import (
 	"algo-agent/internal/service"
+	"algo-agent/internal/utils"
 	"context"
 	"net/url"
+	"strconv"
 )
 
 type JobServer struct {
@@ -25,6 +27,10 @@ func (j *JobServer) Stop(context.Context) error {
 }
 
 func (j *JobServer) Endpoint() (*url.URL, error) {
-	// todo need implement
-	return nil, nil
+	ip := utils.GetLocalIP()
+	u := &url.URL{
+		Scheme: "http",
+		Host:   ip + ":" + strconv.Itoa(int(8001)),
+	}
+	return u, nil
 }

@@ -199,6 +199,12 @@ paths:
                   required: true
                   schema:
                     type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.docker.v1.StopContainerRequest'
+                required: true
             responses:
                 "200":
                     description: OK
@@ -725,6 +731,12 @@ components:
                 success:
                     type: boolean
             description: 停止容器响应
+        api.docker.v1.StopContainerRequest:
+            type: object
+            properties:
+                containerId:
+                    type: string
+            description: 停止容器请求
         api.oss.v1.BatchDeleteFilesReply:
             type: object
             properties:

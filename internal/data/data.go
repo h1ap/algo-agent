@@ -6,8 +6,13 @@ import (
 	"algo-agent/internal/cons/file"
 	"context"
 	"errors"
+	"fmt"
+	"net"
+	"net/http"
 	"net/url"
+	"os"
 	"strconv"
+	"time"
 
 	"github.com/docker/docker/client"
 	"github.com/minio/minio-go/v7"
@@ -133,10 +138,10 @@ func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (biz.MqService, error) {
 	}
 
 	// 创建消费者处理器
-	handler := func(d rabbitmq.Delivery) rabbitmq.Action {
-		l.Infof("Received message: %s", string(d.Body))
-		return rabbitmq.Ack
-	}
+	//handler := func(d rabbitmq.Delivery) rabbitmq.Action {
+	//	l.Infof("Received message: %s", string(d.Body))
+	//	return rabbitmq.Ack
+	//}
 
 	consumer, err := rabbitmq.NewConsumer(
 		conn,
@@ -156,16 +161,16 @@ func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (biz.MqService, error) {
 	}
 
 	// 启动消费者
-	err = consumer.Run(handler)
-	if err != nil {
-		l.Errorf("failed to run consumer: %v", err)
-		publisher.Close()
-		consumer.Close()
-		if conn != nil {
-			_ = conn.Close()
-		}
-		return nil, err
-	}
+	//err = consumer.Run(handler)
+	//if err != nil {
+	//	l.Errorf("failed to run consumer: %v", err)
+	//	publisher.Close()
+	//	consumer.Close()
+	//	if conn != nil {
+	//		_ = conn.Close()
+	//	}
+	//	return nil, err
+	//}
 
 	repo := &RabbitMQRepo{
 		conn:      conn,
@@ -182,37 +187,83 @@ func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (biz.MqService, error) {
 func NewDockerRepo(c *conf.Data, logger log.Logger) (biz.DockerService, error) {
 	l := log.NewHelper(log.With(logger, "module", "data/docker"))
 
-	dockerConf := c.Docker
-	if dockerConf == nil || dockerConf.Host == "" {
-		l.Warn("Docker host is not set, using default")
-		dockerConf = &conf.Data_Docker{
-			Host: "unix:///var/run/docker.sock",
+	// 使用固定的OrbStack套接字
+	socketPath := "/Users/heap/.orbstack/run/docker.sock"
+
+	// 验证套接字是否存在
+	if _, err := os.Stat(socketPath); err != nil {
+		l.Warnf("无法访问OrbStack套接字文件：%v", err)
+		socketPath = c.Docker.Host
+		l.Infof("尝试使用配置的套接字：%s", socketPath)
+
+		if _, err := os.Stat(socketPath); err != nil {
+			l.Errorf("配置的套接字也无法访问：%v", err)
+			return nil, fmt.Errorf("找不到可用的Docker套接字")
 		}
+	}
+
+	l.Infof("使用Docker套接字：%s", socketPath)
+	dockerHost := "unix://" + socketPath
+
+	// 设置默认超时
+	var responseTimeoutDuration time.Duration = 60 * time.Second
+	if c.Docker != nil && c.Docker.ResponseTimeout != nil {
+		responseTimeoutDuration = c.Docker.ResponseTimeout.AsDuration()
+		l.Infof("使用配置的响应超时：%v", responseTimeoutDuration)
+	}
+
+	// 创建HTTP传输
+	httpTransport := &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			d := net.Dialer{Timeout: 5 * time.Second}
+			l.Infof("直接连接Unix套接字：%s", socketPath)
+			conn, err := d.DialContext(ctx, "unix", socketPath)
+			if err != nil {
+				l.Errorf("连接Unix套接字失败：%v", err)
+			}
+			return conn, err
+		},
+		DisableKeepAlives:   false,
+		MaxIdleConnsPerHost: 10,
+		IdleConnTimeout:     30 * time.Second,
+	}
+
+	// 创建HTTP客户端
+	httpClient := &http.Client{
+		Transport: httpTransport,
+		Timeout:   responseTimeoutDuration,
 	}
 
 	// 创建Docker客户端
 	cli, err := client.NewClientWithOpts(
-		client.WithHost(dockerConf.Host),
+		client.WithHTTPClient(httpClient),
+		client.WithHost(dockerHost),
 		client.WithAPIVersionNegotiation(),
 	)
+
 	if err != nil {
-		l.Errorf("failed to create Docker client: %v", err)
+		l.Errorf("创建Docker客户端失败：%v", err)
 		return nil, err
 	}
 
 	// 测试连接
-	_, err = cli.Ping(context.Background())
+	pingCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// 直接尝试ping一次
+	l.Info("尝试Ping Docker守护进程...")
+	ping, err := cli.Ping(pingCtx)
 	if err != nil {
-		l.Errorf("failed to connect to Docker daemon: %v", err)
+		l.Errorf("Docker守护进程Ping失败：%v", err)
 		cli.Close()
 		return nil, err
 	}
 
-	l.Info("Docker connection successful")
+	l.Infof("成功连接到Docker守护进程，API版本：%s", ping.APIVersion)
 
 	return &DockerRepo{
 		client: cli,
-		conf:   dockerConf,
+		conf:   c.Docker,
 		log:    l,
 		logStreams: make(map[string]struct {
 			close     func() error

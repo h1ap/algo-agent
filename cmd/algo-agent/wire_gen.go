@@ -43,8 +43,10 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	}
 	deployUsecase := biz.NewDeployUsecase(confData, deployServiceManager, mqService, dockerService, ossService, logger)
 	deployServer := service.NewDeployServer(deployUsecase, logger)
-	grpcServer := server.NewGRPCServer(confServer, ossServer, deployServer, logger)
-	httpServer := server.NewHTTPServer(confServer, ossServer, deployServer, logger)
+	dockerUsecase := biz.NewDockerUsecase(dockerService, logger)
+	dockerServer := service.NewDockerServer(dockerUsecase, logger)
+	grpcServer := server.NewGRPCServer(confServer, ossServer, deployServer, dockerServer, logger)
+	httpServer := server.NewHTTPServer(confServer, ossServer, deployServer, dockerServer, logger)
 	gpuManager := data.NewNvidiaGpuManager(logger)
 	gpuUsecase := biz.NewGpuUsecase(confData, gpuManager, mqService, logger)
 	jobServer := service.NewJobServer(gpuUsecase, logger)

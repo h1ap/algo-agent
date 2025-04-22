@@ -53,6 +53,7 @@ service DockerService {
   rpc StopContainer (StopContainerRequest) returns (StopContainerReply) {
     option (google.api.http) = {
       post: "/v1/docker/container/{container_id}/stop"
+      body: "*"
     };
   }
 

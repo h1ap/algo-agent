@@ -31,7 +31,7 @@ data:
       retry_multiplier: 2
       retry_max_interval: 10s
   docker:
-    host: unix:///var/run/docker.sock
+    host: /var/run/docker.sock
   oss:
     endpoint: 192.168.110.101:9400
     access_key: 4dd7X0NpMTHZpjkJ8ucl

@@ -38,24 +38,43 @@ type DockerRepo struct {
 
 // FindContainerByName 根据容器名查找容器
 func (r *DockerRepo) FindContainerByName(ctx context.Context, containerName string) (*mc.ContainerInfo, error) {
+	if containerName == "" {
+		r.log.WithContext(ctx).Error("容器名不能为空")
+		return nil, errors.New("容器名不能为空")
+	}
+
 	// Docker API的容器名称前面会加"/"
 	dockerAPIContainerName := "/" + containerName
 
 	args := filters.NewArgs()
 	args.Add("name", containerName)
 
-	containers, err := r.client.ContainerList(ctx, container.ListOptions{
+	// 设置超时控制，15秒超时比10秒更合理
+	timeoutCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	r.log.WithContext(ctx).Infof("开始查找容器: %s", containerName)
+
+	// 使用带超时的上下文进行Docker API调用
+	containers, err := r.client.ContainerList(timeoutCtx, container.ListOptions{
 		All:     true,
 		Filters: args,
 	})
+
+	// 错误处理增强
 	if err != nil {
-		r.log.WithContext(ctx).Errorf("failed to list containers: %v", err)
-		return nil, err
+		if errors.Is(err, context.DeadlineExceeded) {
+			r.log.WithContext(ctx).Errorf("查找容器超时: %v", err)
+			return nil, fmt.Errorf("查找容器超时: %w", err)
+		}
+		r.log.WithContext(ctx).Errorf("列出容器失败: %v", err)
+		return nil, fmt.Errorf("列出容器失败: %w", err)
 	}
 
 	for _, c := range containers {
 		for _, name := range c.Names {
 			if name == dockerAPIContainerName {
+				r.log.WithContext(ctx).Infof("找到容器 %s (ID: %s)", containerName, c.ID)
 				return &mc.ContainerInfo{
 					ContainerID:   c.ID,
 					ContainerName: strings.TrimPrefix(name, "/"),
@@ -64,6 +83,7 @@ func (r *DockerRepo) FindContainerByName(ctx context.Context, containerName stri
 		}
 	}
 
+	r.log.WithContext(ctx).Infof("未找到容器: %s", containerName)
 	return nil, nil
 }
 
@@ -71,8 +91,13 @@ func (r *DockerRepo) FindContainerByName(ctx context.Context, containerName stri
 func (r *DockerRepo) RunContainer(ctx context.Context, imageName string, customArgs []string) (string, error) {
 	hostConfig := &container.HostConfig{}
 
+	// 设置操作超时控制
+	timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	// 创建容器
 	resp, err := r.client.ContainerCreate(
-		ctx,
+		timeoutCtx,
 		&container.Config{
 			Image: imageName,
 			Cmd:   customArgs,
@@ -88,7 +113,12 @@ func (r *DockerRepo) RunContainer(ctx context.Context, imageName string, customA
 		return "", err
 	}
 
-	err = r.client.ContainerStart(ctx, resp.ID, container.StartOptions{})
+	// 设置启动超时控制
+	startCtx, startCancel := context.WithTimeout(ctx, 30*time.Second)
+	defer startCancel()
+
+	// 启动容器
+	err = r.client.ContainerStart(startCtx, resp.ID, container.StartOptions{})
 	if err != nil {
 		r.log.WithContext(ctx).Errorf("failed to start container: %v", err)
 		return "", err

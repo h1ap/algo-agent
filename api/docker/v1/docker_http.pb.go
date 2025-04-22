@@ -180,6 +180,9 @@ func _DockerService_GetContainerLastLogs0_HTTP_Handler(srv DockerServiceHTTPServ
 func _DockerService_StopContainer0_HTTP_Handler(srv DockerServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in StopContainerRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
@@ -418,10 +421,10 @@ func (c *DockerServiceHTTPClientImpl) RunContainer(ctx context.Context, in *RunC
 func (c *DockerServiceHTTPClientImpl) StopContainer(ctx context.Context, in *StopContainerRequest, opts ...http.CallOption) (*StopContainerReply, error) {
 	var out StopContainerReply
 	pattern := "/v1/docker/container/{container_id}/stop"
-	path := binding.EncodeURL(pattern, in, true)
+	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationDockerServiceStopContainer))
 	opts = append(opts, http.PathTemplate(pattern))
-	err := c.cc.Invoke(ctx, "POST", path, nil, &out, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

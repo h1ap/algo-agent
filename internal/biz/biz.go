@@ -2,6 +2,7 @@ package biz
 
 import (
 	"algo-agent/internal/conf"
+	"algo-agent/internal/utils"
 	"context"
 	"time"
 
@@ -80,7 +81,7 @@ func NewGpuUsecase(cfg *conf.Data, g GpuManager, mq MqService, logger log.Logger
 		mq:             mq,
 		tsn:            cfg.Services.Train,
 		nodeName:       nodeName,
-		ipAddress:      getLocalIP(),
+		ipAddress:      utils.GetLocalIP(),
 		ctx:            ctx,
 		cancel:         cancel,
 		reportInterval: 20 * time.Second, // 默认20秒上报一次

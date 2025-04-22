@@ -5,7 +5,6 @@ import (
 	"algo-agent/internal/mq/event"
 	"algo-agent/internal/utils"
 	"context"
-	"net"
 	"runtime"
 	"time"
 
@@ -135,21 +134,4 @@ func (uc *GpuUsecase) reportSystemMetrics() {
 	}
 	uc.log.Infof("系统指标已上报, CPU: %.2f%%, 内存: %d/%d, GPU数量: %d",
 		metrics.CpuLoad, metrics.UsedMemorySize, metrics.TotalMemorySize, len(metrics.GpuList))
-}
-
-// 获取本地IP地址
-func getLocalIP() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return ""
-	}
-	for _, address := range addrs {
-		// 检查IP地址是否为回环地址
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
-		}
-	}
-	return ""
 }
