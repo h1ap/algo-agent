@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	di "algo-agent/internal/model/deploy"
-	ds "algo-agent/internal/model/deploy"
+	cd "algo-agent/internal/cons/deploy"
+	md "algo-agent/internal/model/deploy"
 
 	"github.com/go-kratos/kratos/v2/log"
 )
@@ -35,12 +35,12 @@ type DeployUsecase struct {
 	dsn string // 部署服务名称
 }
 
-func (duc *DeployUsecase) editServiceAndSendMq(ctx context.Context, serivce *di.DeployServiceInfo) error {
+func (duc *DeployUsecase) editServiceAndSendMq(ctx context.Context, serivce *md.DeployServiceInfo) error {
 	duc.dsm.UpdateService(ctx, serivce)
 	return duc.sendStatusChangeMessage(ctx, serivce)
 }
 
-func (duc *DeployUsecase) sendStatusChangeMessage(ctx context.Context, serivce *di.DeployServiceInfo) error {
+func (duc *DeployUsecase) sendStatusChangeMessage(ctx context.Context, serivce *md.DeployServiceInfo) error {
 	reply := &v1.DeployReply{
 		ServiceId:     serivce.ServiceId,
 		ServiceStatus: serivce.ServiceStatus,
@@ -56,7 +56,7 @@ func (duc *DeployUsecase) sendStatusChangeMessage(ctx context.Context, serivce *
 }
 
 // 部署一个推理服务
-func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo *di.DeployServiceInfo) error {
+func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo *md.DeployServiceInfo) error {
 	duc.log.Infof("开始部署服务，服务ID: %s", serviceInfo.ServiceId)
 
 	// 验证服务ID
@@ -72,7 +72,7 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo *di.DeployServ
 
 	// 设置服务状态为"正在部署"
 	duc.log.Info("设置服务状态为'正在部署'")
-	serviceInfo.ServiceStatus = ds.DEPLOYING.Code // DEPLOYING 状态码
+	serviceInfo.ServiceStatus = cd.DEPLOYING.Code // DEPLOYING 状态码
 	if err := duc.dsm.AddService(ctx, serviceInfo); err != nil {
 		return fmt.Errorf("添加服务失败: %v", err)
 	}
@@ -93,7 +93,7 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo *di.DeployServ
 	imageExists, err := duc.d.FindImageByName(ctx, deployRequest.InferImageName)
 	if err != nil || !imageExists {
 		duc.log.Info("本地未找到Docker镜像，准备下载")
-		serviceInfo.ServiceStatus = ds.DOWNLOAD_DEPLOY_IMAGE.Code // DOWNLOAD_DEPLOY_IMAGE 状态码
+		serviceInfo.ServiceStatus = cd.DOWNLOAD_DEPLOY_IMAGE.Code // DOWNLOAD_DEPLOY_IMAGE 状态码
 		if err := duc.editServiceAndSendMq(ctx, serviceInfo); err != nil {
 			return fmt.Errorf("更新服务状态失败: %v", err)
 		}
@@ -126,7 +126,7 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo *di.DeployServ
 
 	// 下载算法脚本
 	duc.log.Info("开始下载算法脚本")
-	serviceInfo.ServiceStatus = ds.DOWNLOAD_ALGO_SCRIPTS.Code // DOWNLOAD_ALGO_SCRIPTS 状态码
+	serviceInfo.ServiceStatus = cd.DOWNLOAD_ALGO_SCRIPTS.Code // DOWNLOAD_ALGO_SCRIPTS 状态码
 	if err := duc.editServiceAndSendMq(ctx, serviceInfo); err != nil {
 		return fmt.Errorf("更新服务状态失败: %v", err)
 	}
@@ -154,7 +154,7 @@ func (duc *DeployUsecase) Deploy(ctx context.Context, serviceInfo *di.DeployServ
 
 	// 下载推理权重文件
 	duc.log.Info("开始下载推理权重文件")
-	serviceInfo.ServiceStatus = ds.DOWNLOAD_WEIGHTS.Code // DOWNLOAD_WEIGHTS 状态码
+	serviceInfo.ServiceStatus = cd.DOWNLOAD_WEIGHTS.Code // DOWNLOAD_WEIGHTS 状态码
 	if err := duc.editServiceAndSendMq(ctx, serviceInfo); err != nil {
 		return fmt.Errorf("更新服务状态失败: %v", err)
 	}
@@ -322,7 +322,7 @@ func (duc *DeployUsecase) CheckTask(ctx context.Context) {
 			duc.log.Infof("检查任务, 容器名为空. serviceId: %s", service.ServiceId)
 			continue
 		}
-		if service.ServiceStatus != ds.RUNNING.Code {
+		if service.ServiceStatus != cd.RUNNING.Code {
 			duc.log.Infof("检查任务, 服务未在运行中, 状态: %d, serviceId: %s", service.ServiceStatus, service.ServiceId)
 			continue
 		}
@@ -334,7 +334,7 @@ func (duc *DeployUsecase) CheckTask(ctx context.Context) {
 		}
 
 		// 获取容器状态
-		inspect, err := duc.d.GetContainerState(ctx, containerInfo.ContainerID)
+		inspect, err := duc.d.GetContainerState(ctx, containerInfo.ContainerId)
 		if err != nil {
 			duc.log.Errorf("获取容器状态失败: %v", err)
 			continue
@@ -347,7 +347,7 @@ func (duc *DeployUsecase) CheckTask(ctx context.Context) {
 			duc.log.Infof("容器状态异常，终止任务: %s", containerName)
 
 			// 获取容器最后的日志
-			logs, err := duc.d.GetContainerLastLogs(ctx, containerInfo.ContainerID, 10)
+			logs, err := duc.d.GetContainerLastLogs(ctx, containerInfo.ContainerId, 10)
 			if err != nil {
 				duc.log.Errorf("获取容器日志失败: %v", err)
 			} else {
@@ -355,7 +355,7 @@ func (duc *DeployUsecase) CheckTask(ctx context.Context) {
 			}
 
 			// 更新服务状态为部署失败
-			service.ServiceStatus = ds.DEPLOYMENT_FAILED.Code
+			service.ServiceStatus = cd.DEPLOYMENT_FAILED.Code
 
 			// 从日志中提取最后一行作为错误消息
 			lastLine := ""
@@ -386,29 +386,29 @@ func (duc *DeployUsecase) HandleEvent(ctx context.Context, deployMessage *v1.Dep
 	serviceId := deployMessage.GetServiceId()
 
 	// 创建服务信息
-	serviceInfo := di.NewDeployServiceInfo(deployMessage)
+	serviceInfo := md.NewDeployServiceInfo(deployMessage)
 
 	// 处理部署操作
-	if deployMessage.GetOp() == ds.DEPLOY.Code {
+	if deployMessage.GetOp() == cd.DEPLOY.Code {
 		duc.log.Infof("收到部署操作请求，serviceId: %s", serviceId)
 		err := duc.Deploy(ctx, serviceInfo)
 		if err != nil {
 			duc.log.Errorf("启动推理服务失败! serviceId: %s, 错误: %v", serviceId, err)
-			serviceInfo.ServiceStatus = ds.DEPLOYMENT_FAILED.Code
+			serviceInfo.ServiceStatus = cd.DEPLOYMENT_FAILED.Code
 			serviceInfo.Remark = "启动错误: " + err.Error()
 			duc.editServiceAndSendMq(ctx, serviceInfo)
 
 			duc.DestroyAndDelete(ctx, serviceId)
 		}
-	} else if deployMessage.GetOp() == ds.DESTROY.Code {
+	} else if deployMessage.GetOp() == cd.DESTROY.Code {
 		duc.log.Infof("收到销毁操作请求，serviceId: %s", serviceId)
 
 		service := duc.dsm.FindServiceById(ctx, serviceId)
 		if service == nil {
 			duc.log.Warnf("销毁失败，未找到服务。serviceId: %s", serviceId)
-			emptyService := &di.DeployServiceInfo{
+			emptyService := &md.DeployServiceInfo{
 				ServiceId:     serviceId,
-				ServiceStatus: ds.DESTROYED.Code,
+				ServiceStatus: cd.DESTROYED.Code,
 				Remark:        "未找到服务!",
 			}
 			duc.sendStatusChangeMessage(ctx, emptyService)
@@ -416,7 +416,7 @@ func (duc *DeployUsecase) HandleEvent(ctx context.Context, deployMessage *v1.Dep
 		}
 
 		duc.DestroyAndDelete(ctx, serviceId)
-		service.ServiceStatus = ds.DESTROYED.Code
+		service.ServiceStatus = cd.DESTROYED.Code
 		duc.sendStatusChangeMessage(ctx, service)
 	} else {
 		duc.log.Errorf("未知的任务操作! op: %d, serviceId: %s", deployMessage.GetOp(), serviceId)

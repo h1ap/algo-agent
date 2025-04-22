@@ -76,7 +76,7 @@ func (r *DockerRepo) FindContainerByName(ctx context.Context, containerName stri
 			if name == dockerAPIContainerName {
 				r.log.WithContext(ctx).Infof("找到容器 %s (ID: %s)", containerName, c.ID)
 				return &mc.ContainerInfo{
-					ContainerID:   c.ID,
+					ContainerId:   c.ID,
 					ContainerName: strings.TrimPrefix(name, "/"),
 				}, nil
 			}
@@ -209,7 +209,7 @@ func (r *DockerRepo) RunAndStartContainer(ctx context.Context, imageName, hostPa
 	}
 
 	return &mc.ContainerInfo{
-		ContainerID:   resp.ID,
+		ContainerId:   resp.ID,
 		ContainerName: containerName,
 	}, nil
 }
@@ -437,7 +437,7 @@ func (r *DockerRepo) StopLogStream(ctx context.Context, containerName string, lo
 		return
 	}
 
-	containerID := containerInfo.ContainerID
+	containerID := containerInfo.ContainerId
 
 	// 获取最后一行日志
 	lastLog, err := r.GetContainerLastLogs(ctx, containerID, 1)
@@ -490,7 +490,7 @@ func (r *DockerRepo) StopContainerByName(ctx context.Context, containerName stri
 	}
 
 	// 获取容器详情
-	inspect, err := r.client.ContainerInspect(ctx, containerInfo.ContainerID)
+	inspect, err := r.client.ContainerInspect(ctx, containerInfo.ContainerId)
 	if err != nil {
 		r.log.WithContext(ctx).Errorf("failed to inspect container: %v", err)
 		return err
@@ -498,7 +498,7 @@ func (r *DockerRepo) StopContainerByName(ctx context.Context, containerName stri
 
 	// 如果容器正在运行，则停止容器
 	if inspect.State.Running {
-		err = r.client.ContainerStop(ctx, containerInfo.ContainerID, container.StopOptions{})
+		err = r.client.ContainerStop(ctx, containerInfo.ContainerId, container.StopOptions{})
 		if err != nil {
 			r.log.WithContext(ctx).Errorf("failed to stop container: %v", err)
 			return err
@@ -510,7 +510,7 @@ func (r *DockerRepo) StopContainerByName(ctx context.Context, containerName stri
 
 	// 如果需要删除容器
 	if remove {
-		err = r.client.ContainerRemove(ctx, containerInfo.ContainerID, container.RemoveOptions{})
+		err = r.client.ContainerRemove(ctx, containerInfo.ContainerId, container.RemoveOptions{})
 		if err != nil {
 			r.log.WithContext(ctx).Errorf("failed to remove container: %v", err)
 			return err
@@ -598,7 +598,7 @@ func (r *DockerRepo) GetContainerState(ctx context.Context, containerID string) 
 
 	// 返回容器状态
 	return &mc.ContainerState{
-		ContainerID: containerID,
+		ContainerId: containerID,
 		State:       inspect.State.Status,
 		ExitCode:    inspect.State.ExitCode,
 	}, nil

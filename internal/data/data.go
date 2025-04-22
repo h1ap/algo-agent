@@ -30,6 +30,7 @@ var ProviderSet = wire.NewSet(
 	NewRabbitMQRepo,
 	NewDockerRepo,
 	NewDeployServiceManagerRepo,
+	NewTrainingTaskManagerRepo,
 
 	NewNvidiaGpuManager,
 )
@@ -275,6 +276,16 @@ func NewDockerRepo(c *conf.Data, logger log.Logger) (biz.DockerService, error) {
 func NewDeployServiceManagerRepo(c *conf.Data, logger log.Logger) (biz.DeployServiceManager, error) {
 	manager := NewDeployServiceManager(
 		file.DEPLOY+file.SEPARATOR+"deploy.json",
+		c.MappingFilePath,
+		logger,
+	)
+
+	return manager, nil
+}
+
+func NewTrainingTaskManagerRepo(c *conf.Data, logger log.Logger) (biz.TrainingTaskManager, error) {
+	manager := NewTrainingTaskManager(
+		file.TRAIN+file.SEPARATOR+"training.json",
 		c.MappingFilePath,
 		logger,
 	)

@@ -36,7 +36,7 @@ func (s *DockerServer) FindContainerByName(ctx context.Context, req *pb.FindCont
 
 	return &pb.FindContainerByNameReply{
 		Container: &pb.ContainerInfo{
-			ContainerId:   container.ContainerID,
+			ContainerId:   container.ContainerId,
 			ContainerName: container.ContainerName,
 		},
 	}, nil
@@ -70,7 +70,7 @@ func (s *DockerServer) RunAndStartContainer(ctx context.Context, req *pb.RunAndS
 
 	return &pb.RunAndStartContainerReply{
 		Container: &pb.ContainerInfo{
-			ContainerId:   container.ContainerID,
+			ContainerId:   container.ContainerId,
 			ContainerName: container.ContainerName,
 		},
 	}, nil

@@ -5,7 +5,7 @@ import "time"
 // GpuInfo Nvidia Gpu 信息
 type GpuInfo struct {
 	// 显卡序号
-	Index int `json:"index"`
+	Index int32 `json:"index"`
 
 	// 设备唯一标识
 	DeviceId string `json:"deviceId"`
@@ -27,7 +27,7 @@ type GpuInfo struct {
 }
 
 // NewGpuInfo 创建一个新的GpuInfo实例
-func NewGpuInfo(index int, deviceId, name, vendor string, cudaUsage float64, memoryTotal, memoryUsed int64) *GpuInfo {
+func NewGpuInfo(index int32, deviceId, name, vendor string, cudaUsage float64, memoryTotal, memoryUsed int64) *GpuInfo {
 	return &GpuInfo{
 		Index:       index,
 		DeviceId:    deviceId,

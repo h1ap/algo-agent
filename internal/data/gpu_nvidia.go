@@ -66,7 +66,7 @@ func (m *NvidiaGpuManager) getNvidiaGpuMetrics() []event.GpuInfo {
 			}
 
 			gpuInfo := event.GpuInfo{
-				Index:       index,
+				Index:       int32(index),
 				Name:        metrics[1],
 				CudaUsage:   float64(int(cudaUsage*100)) / 100.0, // 保留两位小数
 				MemoryTotal: memoryTotal,
