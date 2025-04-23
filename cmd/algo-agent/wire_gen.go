@@ -70,7 +70,12 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	taskCheckerUsecase := biz.NewTaskCheckerUsecase(trainingTaskUsecase, evalTaskUsecase, deployUsecase, extractTaskUsecase, logger)
 	jobServer := service.NewJobServer(gpuUsecase, taskCheckerUsecase, logger)
 	nodeOfflineServer := service.NewNodeOfflineServer(confData, mqService, logger)
-	app := newApp(logger, grpcServer, httpServer, jobServer, nodeOfflineServer)
+	rabbitMQUsecase := biz.NewRabbitMQUsecase(mqService, logger)
+	rabbitMQConsumerServer, err := service.NewRabbitMQConsumerServer(rabbitMQUsecase, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	app := newApp(logger, grpcServer, httpServer, jobServer, nodeOfflineServer, rabbitMQConsumerServer)
 	return app, func() {
 	}, nil
 }

@@ -72,6 +72,23 @@ func (r *RabbitMQRepo) SendToService(ctx context.Context, service string, messag
 	return nil
 }
 
+func (r *RabbitMQRepo) GetOrCreateConsumer(ctx context.Context) (*rabbitmq.Consumer, error) {
+
+	consumer, err := rabbitmq.NewConsumer(
+		r.conn,
+		getDynamicQueueName(r.conf),
+		rabbitmq.WithConsumerOptionsRoutingKey(r.conf.DefaultRoutingKey),
+		rabbitmq.WithConsumerOptionsExchangeName(r.conf.DefaultExchangeName),
+		rabbitmq.WithConsumerOptionsExchangeDeclare,
+		rabbitmq.WithConsumerOptionsExchangeDurable,
+	)
+	if err != nil {
+		r.log.Errorf("创建RabbitMQ消费者失败: %v", err)
+		return nil, err
+	}
+	return consumer, nil
+}
+
 // Close 关闭连接
 func (r *RabbitMQRepo) Close() {
 	if r.publisher != nil {
@@ -88,6 +105,11 @@ func (r *RabbitMQRepo) Close() {
 			r.log.Errorf("failed to close RabbitMQ connection: %v", err)
 		}
 	}
+}
+
+// GetConnection 获取RabbitMQ连接
+func (r *RabbitMQRepo) GetConnection() *rabbitmq.Conn {
+	return r.conn
 }
 
 // getDynamicQueueName 生成动态队列名称

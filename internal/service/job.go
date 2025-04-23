@@ -82,3 +82,8 @@ func (j *JobServer) Endpoint() (*url.URL, error) {
 	}
 	return u, nil
 }
+
+// Name 实现server.Server接口的Name方法
+func (s *JobServer) Name() string {
+	return "job-server"
+}

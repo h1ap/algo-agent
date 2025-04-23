@@ -151,12 +151,6 @@ func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (biz.MqService, error) {
 		return nil, err
 	}
 
-	// 创建消费者处理器
-	//handler := func(d rabbitmq.Delivery) rabbitmq.Action {
-	//	l.Infof("Received message: %s", string(d.Body))
-	//	return rabbitmq.Ack
-	//}
-
 	consumer, err := rabbitmq.NewConsumer(
 		conn,
 		getDynamicQueueName(rc),
@@ -173,18 +167,6 @@ func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (biz.MqService, error) {
 		}
 		return nil, err
 	}
-
-	// 启动消费者
-	//err = consumer.Run(handler)
-	//if err != nil {
-	//	l.Errorf("failed to run consumer: %v", err)
-	//	publisher.Close()
-	//	consumer.Close()
-	//	if conn != nil {
-	//		_ = conn.Close()
-	//	}
-	//	return nil, err
-	//}
 
 	repo := &RabbitMQRepo{
 		conn:      conn,

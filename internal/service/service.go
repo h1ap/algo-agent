@@ -4,7 +4,6 @@ import (
 	"algo-agent/internal/biz"
 	"algo-agent/internal/conf"
 	"context"
-
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 )
@@ -20,6 +19,7 @@ var ProviderSet = wire.NewSet(
 	NewEvalServer,
 	NewExtractServer,
 	NewNodeOfflineServer,
+	NewRabbitMQConsumerServer,
 )
 
 // 当proto文件生成后，此部分注册推理服务的API实现
@@ -91,4 +91,18 @@ func NewNodeOfflineServer(cfg *conf.Data, mqService biz.MqService, logger log.Lo
 		trainService:             cfg.Services.Train,
 		log:                      log.NewHelper(log.With(logger, "module", "service/node-offline")),
 	}
+}
+
+// NewRabbitMQConsumerServer 创建一个新的RabbitMQ消费者
+func NewRabbitMQConsumerServer(
+	uc *biz.RabbitMQUsecase,
+	logger log.Logger,
+) (*RabbitMQConsumerServer, error) {
+	l := log.NewHelper(log.With(logger, "module", "service/rabbitmq-consumer"))
+
+	rmc := &RabbitMQConsumerServer{
+		uc: uc,
+	}
+	l.Info("RabbitMQ消费者服务器创建成功")
+	return rmc, nil
 }
