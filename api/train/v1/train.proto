@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package api.train.v1;
+
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "algo-agent/api/train/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.train.v1";
+
+// 训练信息服务接口定义
+service TrainInfoService {
+  // 处理训练周期信息
+  rpc EpochInfo (TrainingEpochInfoRequest) returns (TrainingResponse) {
+    option (google.api.http) = {
+      post: "/train/epoch"
+      body: "*"
+    };
+  }
+
+  // 处理检查点信息
+  rpc CheckpointInfo (TrainingCheckpointRequest) returns (TrainingResponse) {
+    option (google.api.http) = {
+      post: "/train/checkpoint"
+      body: "*"
+    };
+  }
+
+  // 处理训练完成信息
+  rpc FinishInfo (TrainingTaskResultRequest) returns (TrainingResponse) {
+    option (google.api.http) = {
+      post: "/train/finish"
+      body: "*"
+    };
+  }
+}
+
+// 训练周期信息请求
+message TrainingEpochInfoRequest {
+  // 任务ID
+  string task_id = 1 [(validate.rules).string.min_len = 1];
+  
+  // 当前周期
+  int32 epoch = 2;
+  
+  // 预估剩余时间(秒)
+  int64 estimated_time_left = 3;
+  
+  // 动态指标字段
+  map<string, string> dynamic_fields = 4;
+}
+
+// 训练检查点请求
+message TrainingCheckpointRequest {
+  // 任务ID
+  string task_id = 1 [(validate.rules).string.min_len = 1];
+  
+  // 当前周期
+  int32 epoch = 2;
+  
+  // 检查点路径
+  string checkpoint_path = 3;
+}
+
+// 训练任务结果请求
+message TrainingTaskResultRequest {
+  // 任务ID
+  string task_id = 1 [(validate.rules).string.min_len = 1];
+  
+  // 最优周期
+  int32 best_epoch = 2;
+  
+  // 最优模型路径
+  string best_model_path = 3;
+  
+  // 最终模型路径
+  string final_model_path = 4;
+}
+
+// 通用训练响应
+message TrainingResponse {
+  // 响应码
+  int32 code = 1;
+  
+  // 响应消息
+  string message = 2;
+} 

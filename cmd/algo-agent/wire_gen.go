@@ -45,8 +45,14 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	deployServer := service.NewDeployServer(deployUsecase, logger)
 	dockerUsecase := biz.NewDockerUsecase(dockerService, logger)
 	dockerServer := service.NewDockerServer(dockerUsecase, logger)
-	grpcServer := server.NewGRPCServer(confServer, ossServer, deployServer, dockerServer, logger)
-	httpServer := server.NewHTTPServer(confServer, ossServer, deployServer, dockerServer, logger)
+	trainingTaskManager, err := data.NewTrainingTaskManagerRepo(confData, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	trainingTaskUsecase := biz.NewTrainingTaskUsecase(confData, trainingTaskManager, mqService, dockerService, ossService, logger)
+	trainServer := service.NewTrainServer(trainingTaskUsecase, logger)
+	grpcServer := server.NewGRPCServer(confServer, ossServer, deployServer, dockerServer, trainServer, logger)
+	httpServer := server.NewHTTPServer(confServer, ossServer, deployServer, dockerServer, trainServer, logger)
 	gpuManager := data.NewNvidiaGpuManager(logger)
 	gpuUsecase := biz.NewGpuUsecase(confData, gpuManager, mqService, logger)
 	jobServer := service.NewJobServer(gpuUsecase, logger)

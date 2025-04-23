@@ -16,7 +16,7 @@ var ProviderSet = wire.NewSet(
 	NewRabbitMQUsecase,
 	NewDockerUsecase,
 	NewDeployUsecase,
-
+	NewTrainingTaskUsecase,
 	NewGpuUsecase,
 )
 
@@ -63,6 +63,29 @@ func NewDeployUsecase(
 		mappingFilePath: cfg.MappingFilePath,
 		dsn:             cfg.Services.Deploy,
 		isn:             "inference.py",
+	}
+}
+
+// NewTrainingTaskUsecase 创建新的训练任务用例
+func NewTrainingTaskUsecase(
+	cfg *conf.Data,
+	ttm TrainingTaskManager,
+	mq MqService,
+	d DockerService,
+	oss OSSService,
+	logger log.Logger,
+) *TrainingTaskUsecase {
+	return &TrainingTaskUsecase{
+		ttm:                  ttm,
+		mq:                   mq,
+		d:                    d,
+		oss:                  oss,
+		log:                  log.NewHelper(logger),
+		filePath:             cfg.MappingFilePath,
+		tsn:                  cfg.Services.Train,
+		checkpointPathPrefix: "Checkpoint/train_id-",
+		modelPathPrefix:      "Model/train_id-",
+		trainScriptName:      "train.py",
 	}
 }
 

@@ -2,7 +2,7 @@ package train
 
 // TrainJobStatus 训练作业状态
 type TrainJobStatus struct {
-	Code int
+	Code int32
 	Name string
 }
 
@@ -81,7 +81,7 @@ var (
 )
 
 // GetCode 获取状态编码
-func (t TrainJobStatus) GetCode() int {
+func (t TrainJobStatus) GetCode() int32 {
 	return t.Code
 }
 
@@ -91,7 +91,7 @@ func (t TrainJobStatus) GetName() string {
 }
 
 // GetByCode 根据编码获取对应的状态
-func GetTrainJobStatusByCode(code int) *TrainJobStatus {
+func GetTrainJobStatusByCode(code int32) *TrainJobStatus {
 	allStatuses := []TrainJobStatus{
 		TrainJobStatusUnstart,
 		TrainJobStatusPreparing,

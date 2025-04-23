@@ -2,7 +2,7 @@ package train
 
 // TrainJobOp （训练/评估）作业操作指令
 type TrainJobOp struct {
-	Code int
+	Code int32
 	Name string
 }
 
@@ -32,7 +32,7 @@ var (
 )
 
 // GetCode 获取操作编码
-func (t TrainJobOp) GetCode() int {
+func (t TrainJobOp) GetCode() int32 {
 	return t.Code
 }
 

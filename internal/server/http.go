@@ -4,6 +4,7 @@ import (
 	dv1 "algo-agent/api/deploy/v1"
 	dcv1 "algo-agent/api/docker/v1"
 	ov1 "algo-agent/api/oss/v1"
+	tv1 "algo-agent/api/train/v1"
 	"algo-agent/internal/conf"
 	"algo-agent/internal/service"
 
@@ -18,6 +19,7 @@ func NewHTTPServer(
 	s *service.OSSServer,
 	d *service.DeployServer,
 	ds *service.DockerServer,
+	ts *service.TrainServer,
 	logger log.Logger,
 ) *http.Server {
 	var opts = []http.ServerOption{
@@ -38,5 +40,6 @@ func NewHTTPServer(
 	ov1.RegisterOSSServiceHTTPServer(srv, s)
 	dv1.RegisterDeployServiceHTTPServer(srv, d)
 	dcv1.RegisterDockerServiceHTTPServer(srv, ds)
+	tv1.RegisterTrainInfoServiceHTTPServer(srv, ts)
 	return srv
 }

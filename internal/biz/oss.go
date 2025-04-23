@@ -12,6 +12,7 @@ import (
 type File struct {
 	Name        string
 	Size        int64
+	Path        string
 	ContentType string
 	Content     []byte
 }

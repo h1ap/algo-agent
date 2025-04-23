@@ -81,6 +81,63 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.train.v1.StopContainerResponse'
+    /train/checkpoint:
+        post:
+            tags:
+                - TrainInfoService
+            description: 处理检查点信息
+            operationId: TrainInfoService_CheckpointInfo
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.train.v1.TrainingCheckpointRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.train.v1.TrainingResponse'
+    /train/epoch:
+        post:
+            tags:
+                - TrainInfoService
+            description: 处理训练周期信息
+            operationId: TrainInfoService_EpochInfo
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.train.v1.TrainingEpochInfoRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.train.v1.TrainingResponse'
+    /train/finish:
+        post:
+            tags:
+                - TrainInfoService
+            description: 处理训练完成信息
+            operationId: TrainInfoService_FinishInfo
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.train.v1.TrainingTaskResultRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.train.v1.TrainingResponse'
     /v1/docker/container/name/{containerName}/stop:
         post:
             tags:
@@ -927,6 +984,67 @@ components:
                     type: boolean
                     description: 操作是否成功
             description: 停止容器响应
+        api.train.v1.TrainingCheckpointRequest:
+            type: object
+            properties:
+                taskId:
+                    type: string
+                    description: 任务ID
+                epoch:
+                    type: integer
+                    description: 当前周期
+                    format: int32
+                checkpointPath:
+                    type: string
+                    description: 检查点路径
+            description: 训练检查点请求
+        api.train.v1.TrainingEpochInfoRequest:
+            type: object
+            properties:
+                taskId:
+                    type: string
+                    description: 任务ID
+                epoch:
+                    type: integer
+                    description: 当前周期
+                    format: int32
+                estimatedTimeLeft:
+                    type: string
+                    description: 预估剩余时间(秒)
+                dynamicFields:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: 动态指标字段
+            description: 训练周期信息请求
+        api.train.v1.TrainingResponse:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    description: 响应码
+                    format: int32
+                message:
+                    type: string
+                    description: 响应消息
+            description: 通用训练响应
+        api.train.v1.TrainingTaskResultRequest:
+            type: object
+            properties:
+                taskId:
+                    type: string
+                    description: 任务ID
+                bestEpoch:
+                    type: integer
+                    description: 最优周期
+                    format: int32
+                bestModelPath:
+                    type: string
+                    description: 最优模型路径
+                finalModelPath:
+                    type: string
+                    description: 最终模型路径
+            description: 训练任务结果请求
 tags:
     - name: DeployService
       description: 部署服务接口定义
@@ -938,3 +1056,5 @@ tags:
       description: OSS服务接口定义
     - name: RabbitMQService
       description: RabbitMQ服务接口定义
+    - name: TrainInfoService
+      description: 训练信息服务接口定义

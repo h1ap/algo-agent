@@ -15,6 +15,7 @@ var ProviderSet = wire.NewSet(
 	NewRabbitMQServer,
 	NewDeployServer,
 	NewJobServer,
+	NewTrainServer,
 )
 
 // 当proto文件生成后，此部分注册推理服务的API实现
