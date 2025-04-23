@@ -74,6 +74,10 @@ func (r *RabbitMQRepo) SendToService(ctx context.Context, service string, messag
 
 func (r *RabbitMQRepo) GetOrCreateConsumer(ctx context.Context) (*rabbitmq.Consumer, error) {
 
+	if r.consumer != nil {
+		return r.consumer, nil
+	}
+
 	consumer, err := rabbitmq.NewConsumer(
 		r.conn,
 		getDynamicQueueName(r.conf),
