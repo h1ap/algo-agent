@@ -2,12 +2,13 @@ package main
 
 import (
 	"algo-agent/internal/conf"
-	"algo-agent/internal/job"
+	"algo-agent/internal/service"
 	"flag"
+	"os"
+
 	"github.com/go-kratos/kratos/v2/config"
 	"github.com/go-kratos/kratos/v2/config/file"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
-	"os"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
@@ -33,7 +34,7 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, js *job.JobServer) *kratos.App {
+func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, js *service.JobServer, ns *service.NodeOfflineServer) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
@@ -44,6 +45,7 @@ func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, js *job.JobServ
 			gs,
 			hs,
 			js,
+			ns,
 		),
 	)
 }

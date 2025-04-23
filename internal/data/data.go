@@ -31,6 +31,8 @@ var ProviderSet = wire.NewSet(
 	NewDockerRepo,
 	NewDeployServiceManagerRepo,
 	NewTrainingTaskManagerRepo,
+	NewExtractTaskManagerRepo,
+	NewEvalTaskManagerRepo,
 
 	NewNvidiaGpuManager,
 )
@@ -41,17 +43,27 @@ type Data struct {
 	rmr  *RabbitMQRepo
 	dr   *DockerRepo
 	dsmr *DeployServiceManagerRepo
+	etmr *EvalTaskManagerRepo
 	log  *log.Helper
 }
 
 // NewData .
-func NewData(c *conf.Data, ossRepo *OSSRepo, rabbitMQRepo *RabbitMQRepo, dockerRepo *DockerRepo, deployServiceManager *DeployServiceManagerRepo, logger log.Logger) (*Data, func(), error) {
+func NewData(
+	c *conf.Data,
+	ossRepo *OSSRepo,
+	rabbitMQRepo *RabbitMQRepo,
+	dockerRepo *DockerRepo,
+	deployServiceManagerRepo *DeployServiceManagerRepo,
+	evalTaskManagerRepo *EvalTaskManagerRepo,
+	logger log.Logger,
+) (*Data, func(), error) {
 	log := log.NewHelper(log.With(logger, "module", "data"))
 	d := &Data{
 		or:   ossRepo,
 		rmr:  rabbitMQRepo,
 		dr:   dockerRepo,
-		dsmr: deployServiceManager,
+		dsmr: deployServiceManagerRepo,
+		etmr: evalTaskManagerRepo,
 		log:  log,
 	}
 
@@ -60,6 +72,7 @@ func NewData(c *conf.Data, ossRepo *OSSRepo, rabbitMQRepo *RabbitMQRepo, dockerR
 		d.rmr.Close()
 		d.dr.Close()
 		d.dsmr.Stop(context.Background())
+		d.etmr.Stop(context.Background())
 	}
 	return d, cleanup, nil
 }
@@ -286,6 +299,26 @@ func NewDeployServiceManagerRepo(c *conf.Data, logger log.Logger) (biz.DeploySer
 func NewTrainingTaskManagerRepo(c *conf.Data, logger log.Logger) (biz.TrainingTaskManager, error) {
 	manager := NewTrainingTaskManager(
 		file.TRAIN+file.SEPARATOR+"training.json",
+		c.MappingFilePath,
+		logger,
+	)
+
+	return manager, nil
+}
+
+func NewExtractTaskManagerRepo(c *conf.Data, logger log.Logger) (biz.ExtractTaskManager, error) {
+	manager := NewExtractTaskManager(
+		file.EXTRACT+file.SEPARATOR+"extract.json",
+		c.MappingFilePath,
+		logger,
+	)
+
+	return manager, nil
+}
+
+func NewEvalTaskManagerRepo(c *conf.Data, logger log.Logger) (biz.EvalTaskManager, error) {
+	manager := NewEvalTaskManager(
+		file.EVAL+file.SEPARATOR+"eval.json",
 		c.MappingFilePath,
 		logger,
 	)

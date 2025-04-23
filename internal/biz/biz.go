@@ -17,7 +17,10 @@ var ProviderSet = wire.NewSet(
 	NewDockerUsecase,
 	NewDeployUsecase,
 	NewTrainingTaskUsecase,
+	NewExtractTaskUsecase,
+	NewEvalTaskUsecase,
 	NewGpuUsecase,
+	NewTaskCheckerUsecase,
 )
 
 // NewOSSUsecase 创建新的OSS用例
@@ -89,6 +92,48 @@ func NewTrainingTaskUsecase(
 	}
 }
 
+// NewExtractTaskUsecase 创建新的提取任务用例
+func NewExtractTaskUsecase(
+	cfg *conf.Data,
+	etm ExtractTaskManager,
+	mq MqService,
+	d DockerService,
+	oss OSSService,
+	logger log.Logger,
+) *ExtractTaskUsecase {
+	return &ExtractTaskUsecase{
+		etm:               etm,
+		mq:                mq,
+		d:                 d,
+		oss:               oss,
+		log:               log.NewHelper(logger),
+		filePath:          cfg.MappingFilePath,
+		tsn:               cfg.Services.Train,
+		extractScriptName: "extract.py",
+	}
+}
+
+// NewEvalTaskUsecase 创建新的评估任务用例
+func NewEvalTaskUsecase(
+	cfg *conf.Data,
+	etm EvalTaskManager,
+	mq MqService,
+	d DockerService,
+	oss OSSService,
+	logger log.Logger,
+) *EvalTaskUsecase {
+	return &EvalTaskUsecase{
+		etm:            etm,
+		mq:             mq,
+		d:              d,
+		oss:            oss,
+		log:            log.NewHelper(logger),
+		filePath:       cfg.MappingFilePath,
+		tsn:            cfg.Services.Train,
+		evalScriptName: "eval.py",
+	}
+}
+
 func NewGpuUsecase(cfg *conf.Data, g GpuManager, mq MqService, logger log.Logger) *GpuUsecase {
 	ctx, cancel := context.WithCancel(context.Background())
 	// 获取节点名称，优先使用Node配置
@@ -109,5 +154,25 @@ func NewGpuUsecase(cfg *conf.Data, g GpuManager, mq MqService, logger log.Logger
 		cancel:         cancel,
 		reportInterval: 20 * time.Second, // 默认20秒上报一次
 		log:            log.NewHelper(logger),
+	}
+}
+
+// NewTaskCheckerUsecase 创建新的任务检查器用例
+func NewTaskCheckerUsecase(
+	training *TrainingTaskUsecase,
+	eval *EvalTaskUsecase,
+	deploy *DeployUsecase,
+	extract *ExtractTaskUsecase,
+	logger log.Logger,
+) *TaskCheckerUsecase {
+	ctx, cancel := context.WithCancel(context.Background())
+	return &TaskCheckerUsecase{
+		trainingUsecase: training,
+		evalUsecase:     eval,
+		deployUsecase:   deploy,
+		extractUsecase:  extract,
+		ctx:             ctx,
+		cancel:          cancel,
+		log:             log.NewHelper(logger),
 	}
 }

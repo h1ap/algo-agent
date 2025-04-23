@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package api.extract.v1;
+
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "algo-agent/api/extract/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.extract.v1";
+
+// 提取任务服务接口定义
+service ExtractInfoService {
+  // 处理提取任务结果
+  rpc ResultInfo (ExtractTaskResultRequest) returns (ExtractResponse) {
+    option (google.api.http) = {
+      post: "/extract/finish"
+      body: "*"
+    };
+  }
+}
+
+// 提取任务结果请求
+message ExtractTaskResultRequest {
+  // 任务ID
+  string task_id = 1 [(validate.rules).string.min_len = 1];
+  
+  // 模型路径
+  string model_path = 2 [(validate.rules).string.min_len = 1];
+}
+
+// 通用提取响应
+message ExtractResponse {
+  // 响应码
+  int32 code = 1;
+  
+  // 响应消息
+  string message = 2;
+} 

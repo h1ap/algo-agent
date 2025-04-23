@@ -2,6 +2,7 @@ package service
 
 import (
 	"algo-agent/internal/biz"
+	"algo-agent/internal/conf"
 	"context"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -16,6 +17,9 @@ var ProviderSet = wire.NewSet(
 	NewDeployServer,
 	NewJobServer,
 	NewTrainServer,
+	NewEvalServer,
+	NewExtractServer,
+	NewNodeOfflineServer,
 )
 
 // 当proto文件生成后，此部分注册推理服务的API实现
@@ -34,13 +38,57 @@ func NewOSSServer(uc *biz.OSSUsecase, logger log.Logger) *OSSServer {
 	}
 }
 
+// NewTrainServer 创建训练信息服务实例
+func NewTrainServer(ttu *biz.TrainingTaskUsecase, logger log.Logger) *TrainServer {
+	return &TrainServer{
+		ttu: ttu,
+		log: log.NewHelper(logger),
+	}
+}
+
+// NewEvalServer 创建评估服务实例
+func NewEvalServer(uc *biz.EvalTaskUsecase, logger log.Logger) *EvalServer {
+	return &EvalServer{
+		uc:  uc,
+		log: log.NewHelper(logger),
+	}
+}
+
+// NewExtractServer 创建提取任务服务实例
+func NewExtractServer(uc *biz.ExtractTaskUsecase, logger log.Logger) *ExtractServer {
+	return &ExtractServer{
+		uc:  uc,
+		log: log.NewHelper(logger),
+	}
+}
+
 // NewJobServer 创建定时任务管理器
-func NewJobServer(gpuUC *biz.GpuUsecase, logger log.Logger) *JobServer {
+func NewJobServer(gpuUC *biz.GpuUsecase, taskChecker *biz.TaskCheckerUsecase, logger log.Logger) *JobServer {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &JobServer{
-		gpuUC:  gpuUC,
-		log:    log.NewHelper(log.With(logger, "module", "biz/job-manager")),
-		ctx:    ctx,
-		cancel: cancel,
+		gpuUC:       gpuUC,
+		taskChecker: taskChecker,
+		log:         log.NewHelper(log.With(logger, "module", "biz/job-manager")),
+		ctx:         ctx,
+		cancel:      cancel,
+	}
+}
+
+// NewNodeOfflineServer 创建节点下线服务实例
+func NewNodeOfflineServer(cfg *conf.Data, mqService biz.MqService, logger log.Logger) *NodeOfflineServer {
+	// 获取节点名称，优先使用Node配置
+	nodeName := ""
+	if cfg.Node != nil {
+		nodeName = cfg.Node.NodeName
+	} else if cfg.Rabbitmq != nil {
+		nodeName = cfg.Rabbitmq.NodeName
+	}
+
+	return &NodeOfflineServer{
+		NODE_OFFLINE_SERVICE_KEY: "nodeOfflineService",
+		mqService:                mqService,
+		nodeName:                 nodeName,
+		trainService:             cfg.Services.Train,
+		log:                      log.NewHelper(log.With(logger, "module", "service/node-offline")),
 	}
 }

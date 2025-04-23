@@ -3,6 +3,8 @@ package server
 import (
 	dv1 "algo-agent/api/deploy/v1"
 	dcv1 "algo-agent/api/docker/v1"
+	ev1 "algo-agent/api/eval/v1"
+	exv1 "algo-agent/api/extract/v1"
 	ov1 "algo-agent/api/oss/v1"
 	tv1 "algo-agent/api/train/v1"
 	"algo-agent/internal/conf"
@@ -20,6 +22,8 @@ func NewGRPCServer(
 	d *service.DeployServer,
 	ds *service.DockerServer,
 	ts *service.TrainServer,
+	es *service.EvalServer,
+	exs *service.ExtractServer,
 	logger log.Logger,
 ) *grpc.Server {
 	var opts = []grpc.ServerOption{
@@ -41,5 +45,7 @@ func NewGRPCServer(
 	dv1.RegisterDeployServiceServer(srv, d)
 	dcv1.RegisterDockerServiceServer(srv, ds)
 	tv1.RegisterTrainInfoServiceServer(srv, ts)
+	ev1.RegisterEvalInfoServiceServer(srv, es)
+	exv1.RegisterExtractInfoServiceServer(srv, exs)
 	return srv
 }

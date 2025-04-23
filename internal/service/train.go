@@ -17,14 +17,6 @@ type TrainServer struct {
 	log *log.Helper
 }
 
-// NewTrainServer 创建训练信息服务实例
-func NewTrainServer(ttu *biz.TrainingTaskUsecase, logger log.Logger) *TrainServer {
-	return &TrainServer{
-		ttu: ttu,
-		log: log.NewHelper(logger),
-	}
-}
-
 // EpochInfo 处理训练周期信息
 func (s *TrainServer) EpochInfo(ctx context.Context, req *pb.TrainingEpochInfoRequest) (*pb.TrainingResponse, error) {
 	s.log.Infof("收到训练周期信息，任务ID: %s，周期: %d", req.TaskId, req.Epoch)

@@ -48,6 +48,10 @@ api:
 # build
 build:
 	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
+build-x86:
+	mkdir -p bin/ && GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
+build-windows-x86:
+	mkdir -p bin/ && GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
 
 .PHONY: generate
 # generate

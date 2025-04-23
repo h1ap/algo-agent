@@ -81,6 +81,82 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.train.v1.StopContainerResponse'
+    /eval/batch:
+        post:
+            tags:
+                - EvalInfoService
+            description: 处理评估批次信息 (新接口)
+            operationId: EvalInfoService_BatchInfo
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.eval.v1.EvalBatchInfoRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.eval.v1.EvalResponse'
+    /eval/epoch:
+        post:
+            tags:
+                - EvalInfoService
+            description: 处理评估周期信息 (已废弃)
+            operationId: EvalInfoService_EpochInfo
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.eval.v1.EvalBatchInfoRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.eval.v1.EvalResponse'
+    /eval/finish:
+        post:
+            tags:
+                - EvalInfoService
+            description: 处理评估完成信息
+            operationId: EvalInfoService_FinishInfo
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.eval.v1.EvalTaskResultRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.eval.v1.EvalResponse'
+    /extract/finish:
+        post:
+            tags:
+                - ExtractInfoService
+            description: 处理提取任务结果
+            operationId: ExtractInfoService_ResultInfo
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.extract.v1.ExtractTaskResultRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.extract.v1.ExtractResponse'
     /train/checkpoint:
         post:
             tags:
@@ -794,6 +870,86 @@ components:
                 containerId:
                     type: string
             description: 停止容器请求
+        api.eval.v1.ClassifyMetric:
+            type: object
+            properties:
+                metrics:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: 指标内容，必须包含label字段
+            description: 分类指标项
+        api.eval.v1.EvalBatchInfoRequest:
+            type: object
+            properties:
+                taskId:
+                    type: string
+                    description: 任务ID
+                details:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.eval.v1.EvalDetail'
+                    description: 评估详情列表
+            description: 评估批次信息请求
+        api.eval.v1.EvalDetail:
+            type: object
+            properties:
+                dataUuid:
+                    type: string
+                    description: 数据UUID
+                evalData:
+                    type: string
+                    description: 评估数据
+            description: 评估详情
+        api.eval.v1.EvalResponse:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    description: 响应码
+                    format: int32
+                message:
+                    type: string
+                    description: 响应消息
+            description: 通用评估响应
+        api.eval.v1.EvalTaskResultRequest:
+            type: object
+            properties:
+                taskId:
+                    type: string
+                    description: 任务ID
+                overallMetrics:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: 整体指标
+                classifyMetrics:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.eval.v1.ClassifyMetric'
+                    description: 分类指标，每一项都应该包含label字段，标识分类标签
+            description: 评估任务结果请求
+        api.extract.v1.ExtractResponse:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    description: 响应码
+                    format: int32
+                message:
+                    type: string
+                    description: 响应消息
+            description: 通用提取响应
+        api.extract.v1.ExtractTaskResultRequest:
+            type: object
+            properties:
+                taskId:
+                    type: string
+                    description: 任务ID
+                modelPath:
+                    type: string
+                    description: 模型路径
+            description: 提取任务结果请求
         api.oss.v1.BatchDeleteFilesReply:
             type: object
             properties:
@@ -1052,6 +1208,10 @@ tags:
       description: Docker服务接口定义
     - name: DockerTestService
       description: Docker测试服务定义
+    - name: EvalInfoService
+      description: 评估信息服务接口定义
+    - name: ExtractInfoService
+      description: 提取任务服务接口定义
     - name: OSSService
       description: OSS服务接口定义
     - name: RabbitMQService

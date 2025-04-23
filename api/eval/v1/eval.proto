@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package api.eval.v1;
+
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "algo-agent/api/eval/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.eval.v1";
+
+// 评估信息服务接口定义
+service EvalInfoService {
+  // 处理评估批次信息 (新接口)
+  rpc BatchInfo (EvalBatchInfoRequest) returns (EvalResponse) {
+    option (google.api.http) = {
+      post: "/eval/batch"
+      body: "*"
+    };
+  }
+
+  // 处理评估周期信息 (已废弃)
+  rpc EpochInfo (EvalBatchInfoRequest) returns (EvalResponse) {
+    option (google.api.http) = {
+      post: "/eval/epoch"
+      body: "*"
+    };
+  }
+
+  // 处理评估完成信息
+  rpc FinishInfo (EvalTaskResultRequest) returns (EvalResponse) {
+    option (google.api.http) = {
+      post: "/eval/finish"
+      body: "*"
+    };
+  }
+}
+
+// 评估批次信息请求
+message EvalBatchInfoRequest {
+  // 任务ID
+  string task_id = 1 [(validate.rules).string.min_len = 1];
+  
+  // 评估详情列表
+  repeated EvalDetail details = 2;
+}
+
+// 评估详情
+message EvalDetail {
+  // 数据UUID
+  string data_uuid = 1;
+  
+  // 评估数据
+  string eval_data = 2;
+}
+
+// 评估任务结果请求
+message EvalTaskResultRequest {
+  // 任务ID
+  string task_id = 1 [(validate.rules).string.min_len = 1];
+  
+  // 整体指标
+  map<string, string> overall_metrics = 2;
+  
+  // 分类指标，每一项都应该包含label字段，标识分类标签
+  repeated ClassifyMetric classify_metrics = 3;
+}
+
+// 分类指标项
+message ClassifyMetric {
+  // 指标内容，必须包含label字段
+  map<string, string> metrics = 1;
+}
+
+// 通用评估响应
+message EvalResponse {
+  // 响应码
+  int32 code = 1;
+  
+  // 响应消息
+  string message = 2;
+} 

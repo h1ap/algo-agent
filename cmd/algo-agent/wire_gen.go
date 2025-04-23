@@ -51,13 +51,26 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	}
 	trainingTaskUsecase := biz.NewTrainingTaskUsecase(confData, trainingTaskManager, mqService, dockerService, ossService, logger)
 	trainServer := service.NewTrainServer(trainingTaskUsecase, logger)
-	grpcServer := server.NewGRPCServer(confServer, ossServer, deployServer, dockerServer, trainServer, logger)
-	httpServer := server.NewHTTPServer(confServer, ossServer, deployServer, dockerServer, trainServer, logger)
+	evalTaskManager, err := data.NewEvalTaskManagerRepo(confData, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	evalTaskUsecase := biz.NewEvalTaskUsecase(confData, evalTaskManager, mqService, dockerService, ossService, logger)
+	evalServer := service.NewEvalServer(evalTaskUsecase, logger)
+	extractTaskManager, err := data.NewExtractTaskManagerRepo(confData, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	extractTaskUsecase := biz.NewExtractTaskUsecase(confData, extractTaskManager, mqService, dockerService, ossService, logger)
+	extractServer := service.NewExtractServer(extractTaskUsecase, logger)
+	grpcServer := server.NewGRPCServer(confServer, ossServer, deployServer, dockerServer, trainServer, evalServer, extractServer, logger)
+	httpServer := server.NewHTTPServer(confServer, ossServer, deployServer, dockerServer, trainServer, evalServer, extractServer, logger)
 	gpuManager := data.NewNvidiaGpuManager(logger)
 	gpuUsecase := biz.NewGpuUsecase(confData, gpuManager, mqService, logger)
-	jobServer := service.NewJobServer(gpuUsecase, logger)
-	jobJobServer := server.NewJobServer(jobServer)
-	app := newApp(logger, grpcServer, httpServer, jobJobServer)
+	taskCheckerUsecase := biz.NewTaskCheckerUsecase(trainingTaskUsecase, evalTaskUsecase, deployUsecase, extractTaskUsecase, logger)
+	jobServer := service.NewJobServer(gpuUsecase, taskCheckerUsecase, logger)
+	nodeOfflineServer := service.NewNodeOfflineServer(confData, mqService, logger)
+	app := newApp(logger, grpcServer, httpServer, jobServer, nodeOfflineServer)
 	return app, func() {
 	}, nil
 }
