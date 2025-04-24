@@ -9,6 +9,9 @@ import (
 	tv1 "algo-agent/api/train/v1"
 	"algo-agent/internal/conf"
 	"algo-agent/internal/service"
+	"algo-agent/internal/utils"
+	"fmt"
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
@@ -26,9 +29,17 @@ func NewHTTPServer(
 	exs *service.ExtractServer,
 	logger log.Logger,
 ) *http.Server {
+	ip := utils.GetLocalIP()
+	// 格式化字符串
+	endpoint := fmt.Sprintf("%s:%d", ip, 4318)
+	err := initTracer(endpoint)
+	if err != nil {
+		panic(err)
+	}
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
+			tracing.Server(),
 		),
 	}
 	if c.Http.Network != "" {

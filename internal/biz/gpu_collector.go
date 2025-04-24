@@ -132,6 +132,6 @@ func (uc *GpuUsecase) reportSystemMetrics() {
 		uc.log.Errorf("系统指标上报失败: %v", err)
 		return
 	}
-	uc.log.Infof("系统指标已上报, CPU: %.2f%%, 内存: %d/%d, GPU数量: %d",
+	uc.log.Debugf("系统指标已上报, CPU: %.2f%%, 内存: %d/%d, GPU数量: %d",
 		metrics.CpuLoad, metrics.UsedMemorySize, metrics.TotalMemorySize, len(metrics.GpuList))
 }

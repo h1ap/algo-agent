@@ -656,10 +656,10 @@ func (ttu *TrainingTaskUsecase) HandleTrainingTask(ctx context.Context, task *ev
 
 // CheckTask 检查所有任务的状态
 func (ttu *TrainingTaskUsecase) CheckTask(ctx context.Context) {
-	ttu.log.Info("开始检查任务状态...")
+	ttu.log.Debug("开始检查任务状态...")
 	tasks := ttu.ttm.GetTaskList(ctx)
 	if len(tasks) == 0 {
-		ttu.log.Info("没有需要检查的任务")
+		ttu.log.Debug("没有需要检查的任务")
 		return
 	}
 

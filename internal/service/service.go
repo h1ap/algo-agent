@@ -3,8 +3,10 @@ package service
 import (
 	"algo-agent/internal/biz"
 	"algo-agent/internal/conf"
+	matcher "algo-agent/internal/middleware"
 	"context"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/google/wire"
 )
 
@@ -100,9 +102,14 @@ func NewRabbitMQConsumerServer(
 ) (*RabbitMQConsumerServer, error) {
 	l := log.NewHelper(log.With(logger, "module", "service/rabbitmq-consumer"))
 
+	m := matcher.New()
+	m.Use(recovery.Recovery())
+
 	rmc := &RabbitMQConsumerServer{
-		uc: uc,
+		middleware: m,
+		uc:         uc,
 	}
+
 	l.Info("RabbitMQ消费者服务器创建成功")
 	return rmc, nil
 }

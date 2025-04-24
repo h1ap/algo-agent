@@ -5,6 +5,7 @@ import (
 	"algo-agent/internal/mq/event"
 	"context"
 	"encoding/json"
+
 	"github.com/wagslane/go-rabbitmq"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -33,10 +34,10 @@ type RabbitMQUsecase struct {
 	cs  *rabbitmq.Consumer
 	log *log.Helper
 
-	trainingUsecase TrainingTaskUsecase
-	evalUsecase     EvalTaskUsecase
-	deployUsecase   DeployUsecase
-	extractUsecase  ExtractTaskUsecase
+	trainingUsecase *TrainingTaskUsecase
+	evalUsecase     *EvalTaskUsecase
+	deployUsecase   *DeployUsecase
+	extractUsecase  *ExtractTaskUsecase
 }
 
 // SendMessage 发送消息
@@ -68,13 +69,14 @@ func (uc *RabbitMQUsecase) Subscribe(ctx context.Context) error {
 		return err
 	}
 	// 启动消费处理
+	uc.log.Info("RabbitMQ消费者已启动")
 	err = uc.cs.Run(uc.messageHandler)
 	if err != nil {
 		uc.log.Errorf("启动RabbitMQ消费者失败: %v", err)
 		uc.cs.Close()
 		return err
 	}
-	uc.log.Info("RabbitMQ消费者已启动")
+
 	return nil
 }
 

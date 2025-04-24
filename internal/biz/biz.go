@@ -32,10 +32,21 @@ func NewOSSUsecase(store OSSService, logger log.Logger) *OSSUsecase {
 }
 
 // NewRabbitMQUsecase 创建新的RabbitMQ用例
-func NewRabbitMQUsecase(sender MqService, logger log.Logger) *RabbitMQUsecase {
+func NewRabbitMQUsecase(
+	sender MqService,
+	trainingUsecase *TrainingTaskUsecase,
+	evalUsecase *EvalTaskUsecase,
+	deployUsecase *DeployUsecase,
+	extractUsecase *ExtractTaskUsecase,
+	logger log.Logger,
+) *RabbitMQUsecase {
 	return &RabbitMQUsecase{
-		mq:  sender,
-		log: log.NewHelper(logger),
+		mq:              sender,
+		trainingUsecase: trainingUsecase,
+		evalUsecase:     evalUsecase,
+		deployUsecase:   deployUsecase,
+		extractUsecase:  extractUsecase,
+		log:             log.NewHelper(logger),
 	}
 }
 

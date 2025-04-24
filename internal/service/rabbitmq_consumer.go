@@ -2,17 +2,20 @@ package service
 
 import (
 	"algo-agent/internal/biz"
+	matcher "algo-agent/internal/middleware"
 	"algo-agent/internal/utils"
 	"context"
-	"github.com/go-kratos/kratos/v2/log"
 	"net/url"
 	"strconv"
+
+	"github.com/go-kratos/kratos/v2/log"
 )
 
 // RabbitMQConsumerServer 实现RabbitMQ消费者
 type RabbitMQConsumerServer struct {
-	uc  *biz.RabbitMQUsecase
-	log *log.Helper
+	uc         *biz.RabbitMQUsecase
+	middleware matcher.Matcher
+	log        *log.Helper
 }
 
 // Name 实现server.Server接口的Name方法

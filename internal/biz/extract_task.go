@@ -400,10 +400,10 @@ func (uc *ExtractTaskUsecase) HandleExtractTask(ctx context.Context, task *event
 
 // CheckTask 检查所有任务的状态
 func (uc *ExtractTaskUsecase) CheckTask(ctx context.Context) {
-	uc.log.Info("开始检查任务状态...")
+	uc.log.Debug("开始检查任务状态...")
 	tasks := uc.etm.GetTaskList(ctx)
 	if len(tasks) == 0 {
-		uc.log.Info("没有需要检查的任务")
+		uc.log.Debug("没有需要检查的任务")
 		return
 	}
 

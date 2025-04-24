@@ -532,10 +532,10 @@ func (etu *EvalTaskUsecase) HandleEvalTask(ctx context.Context, task *event.Eval
 
 // CheckTask 检查所有任务的状态
 func (etu *EvalTaskUsecase) CheckTask(ctx context.Context) {
-	etu.log.Info("开始检查评估任务状态...")
+	etu.log.Debug("开始检查评估任务状态...")
 	tasks := etu.etm.GetTaskList(ctx)
 	if len(tasks) == 0 {
-		etu.log.Info("没有需要检查的评估任务")
+		etu.log.Debug("没有需要检查的评估任务")
 		return
 	}
 

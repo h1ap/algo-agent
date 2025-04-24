@@ -68,10 +68,10 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	gpuManager := data.NewNvidiaGpuManager(logger)
 	gpuUsecase := biz.NewGpuUsecase(confData, gpuManager, mqService, logger)
 	taskCheckerUsecase := biz.NewTaskCheckerUsecase(trainingTaskUsecase, evalTaskUsecase, deployUsecase, extractTaskUsecase, logger)
-	jobServer := service.NewJobServer(gpuUsecase, taskCheckerUsecase, logger)
-	nodeOfflineServer := service.NewNodeOfflineServer(confData, mqService, logger)
-	rabbitMQUsecase := biz.NewRabbitMQUsecase(mqService, logger)
-	rabbitMQConsumerServer, err := service.NewRabbitMQConsumerServer(rabbitMQUsecase, logger)
+	jobServer := service.CreateJobServer(gpuUsecase, taskCheckerUsecase, logger)
+	nodeOfflineServer := service.CreateNodeOfflineServer(confData, mqService, logger)
+	rabbitMQUsecase := biz.NewRabbitMQUsecase(mqService, trainingTaskUsecase, evalTaskUsecase, deployUsecase, extractTaskUsecase, logger)
+	rabbitMQConsumerServer, err := service.CreateRabbitMQConsumerServer(rabbitMQUsecase, logger)
 	if err != nil {
 		return nil, nil, err
 	}

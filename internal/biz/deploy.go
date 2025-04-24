@@ -264,27 +264,27 @@ func (duc *DeployUsecase) DestroyAndDelete(ctx context.Context, serviceId string
 
 // CheckTask 检查所有正在运行的任务，监控容器状态
 func (duc *DeployUsecase) CheckTask(ctx context.Context) {
-	duc.log.Info("检查任务...")
+	duc.log.Debug("检查部署任务...")
 	services := duc.dsm.GetServiceList(ctx)
 	if len(services) == 0 {
-		duc.log.Info("检查任务, 没有服务")
+		duc.log.Debug("检查部署任务, 没有部署服务")
 		return
 	}
 
 	for _, service := range services {
 		containerName := service.ServiceContainerName
 		if containerName == "" {
-			duc.log.Infof("检查任务, 容器名为空. serviceId: %s", service.ServiceId)
+			duc.log.Infof("检查部署任务, 容器名为空. serviceId: %s", service.ServiceId)
 			continue
 		}
 		if service.ServiceStatus != cd.RUNNING.Code {
-			duc.log.Infof("检查任务, 服务未在运行中, 状态: %d, serviceId: %s", service.ServiceStatus, service.ServiceId)
+			duc.log.Infof("检查部署任务, 服务未在运行中, 状态: %d, serviceId: %s", service.ServiceStatus, service.ServiceId)
 			continue
 		}
 
 		containerInfo, err := duc.d.FindContainerByName(ctx, containerName)
 		if err != nil || containerInfo == nil {
-			duc.log.Infof("检查任务, 未找到容器. serviceId: %s", service.ServiceId)
+			duc.log.Infof("检查部署任务, 未找到容器. serviceId: %s", service.ServiceId)
 			continue
 		}
 
@@ -295,7 +295,7 @@ func (duc *DeployUsecase) CheckTask(ctx context.Context) {
 			continue
 		}
 
-		duc.log.Infof("检查任务, serviceId: %s, 容器状态: %s", service.ServiceId, inspect.State)
+		duc.log.Infof("检查部署任务, serviceId: %s, 容器状态: %s", service.ServiceId, inspect.State)
 
 		// 检查容器是否在运行中
 		if inspect.State != "running" {
@@ -324,10 +324,10 @@ func (duc *DeployUsecase) CheckTask(ctx context.Context) {
 				}
 			}
 
-			service.Remark = "任务执行错误: " + lastLine
+			service.Remark = "部署任务执行错误: " + lastLine
 			err = duc.editServiceAndSendMq(ctx, service)
 			if err != nil {
-				duc.log.Errorf("更新服务状态失败: %v", err)
+				duc.log.Errorf("更新部署服务状态失败: %v", err)
 			}
 
 			// 销毁和删除服务
