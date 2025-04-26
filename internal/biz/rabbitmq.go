@@ -5,6 +5,7 @@ import (
 	"algo-agent/internal/mq/event"
 	"context"
 	"encoding/json"
+	"runtime"
 
 	"github.com/wagslane/go-rabbitmq"
 
@@ -70,10 +71,25 @@ func (uc *RabbitMQUsecase) Subscribe(ctx context.Context) error {
 	}
 	// 启动消费处理
 	uc.log.Info("RabbitMQ消费者已启动")
+
+	// 使用 defer 和 recover 捕获可能的 panic
+	defer func() {
+		if r := recover(); r != nil {
+			buf := make([]byte, 2048)
+			runtime.Stack(buf, false)
+			uc.log.Errorf("RabbitMQ消费者运行时发生panic: %v\n堆栈信息:\n%s", r, buf)
+			if uc.cs != nil {
+				uc.cs.Close()
+			}
+		}
+	}()
+
 	err = uc.cs.Run(uc.messageHandler)
 	if err != nil {
 		uc.log.Errorf("启动RabbitMQ消费者失败: %v", err)
-		uc.cs.Close()
+		if uc.cs != nil {
+			uc.cs.Close()
+		}
 		return err
 	}
 

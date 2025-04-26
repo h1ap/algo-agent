@@ -2,6 +2,7 @@ package main
 
 import (
 	"algo-agent/internal/conf"
+	"algo-agent/internal/middleware/cron"
 	"algo-agent/internal/service"
 	"flag"
 	"os"
@@ -38,7 +39,7 @@ func newApp(
 	logger log.Logger,
 	gs *grpc.Server,
 	hs *http.Server,
-	js *service.JobServer,
+	cs *cron.Server,
 	ns *service.NodeOfflineServer,
 	rb *service.RabbitMQConsumerServer,
 ) *kratos.App {
@@ -51,7 +52,7 @@ func newApp(
 		kratos.Server(
 			gs,
 			hs,
-			js,
+			cs,
 			ns,
 			rb,
 		),

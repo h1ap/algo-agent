@@ -3,10 +3,7 @@ package service
 import (
 	"algo-agent/internal/biz"
 	"algo-agent/internal/conf"
-	matcher "algo-agent/internal/middleware"
-	"context"
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/google/wire"
 )
 
@@ -16,12 +13,12 @@ var ProviderSet = wire.NewSet(
 	NewDockerServer,
 	NewRabbitMQServer,
 	NewDeployServer,
-	NewJobServer,
 	NewTrainServer,
 	NewEvalServer,
 	NewExtractServer,
 	NewNodeOfflineServer,
 	NewRabbitMQConsumerServer,
+	NewCronServer,
 )
 
 // 当proto文件生成后，此部分注册推理服务的API实现
@@ -64,18 +61,6 @@ func NewExtractServer(uc *biz.ExtractTaskUsecase, logger log.Logger) *ExtractSer
 	}
 }
 
-// NewJobServer 创建定时任务管理器
-func NewJobServer(gpuUC *biz.GpuUsecase, taskChecker *biz.TaskCheckerUsecase, logger log.Logger) *JobServer {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &JobServer{
-		gpuUC:       gpuUC,
-		taskChecker: taskChecker,
-		log:         log.NewHelper(log.With(logger, "module", "biz/job-manager")),
-		ctx:         ctx,
-		cancel:      cancel,
-	}
-}
-
 // NewNodeOfflineServer 创建节点下线服务实例
 func NewNodeOfflineServer(cfg *conf.Data, mqService biz.MqService, logger log.Logger) *NodeOfflineServer {
 	// 获取节点名称，优先使用Node配置
@@ -102,12 +87,8 @@ func NewRabbitMQConsumerServer(
 ) (*RabbitMQConsumerServer, error) {
 	l := log.NewHelper(log.With(logger, "module", "service/rabbitmq-consumer"))
 
-	m := matcher.New()
-	m.Use(recovery.Recovery())
-
 	rmc := &RabbitMQConsumerServer{
-		middleware: m,
-		uc:         uc,
+		uc: uc,
 	}
 
 	l.Info("RabbitMQ消费者服务器创建成功")

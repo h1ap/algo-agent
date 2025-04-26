@@ -2,7 +2,6 @@ package service
 
 import (
 	"algo-agent/internal/biz"
-	matcher "algo-agent/internal/middleware"
 	"algo-agent/internal/utils"
 	"context"
 	"net/url"
@@ -13,9 +12,8 @@ import (
 
 // RabbitMQConsumerServer 实现RabbitMQ消费者
 type RabbitMQConsumerServer struct {
-	uc         *biz.RabbitMQUsecase
-	middleware matcher.Matcher
-	log        *log.Helper
+	uc  *biz.RabbitMQUsecase
+	log *log.Helper
 }
 
 // Name 实现server.Server接口的Name方法
