@@ -176,14 +176,11 @@ func NewTaskCheckerUsecase(
 	extract *ExtractTaskUsecase,
 	logger log.Logger,
 ) *TaskCheckerUsecase {
-	ctx, cancel := context.WithCancel(context.Background())
 	return &TaskCheckerUsecase{
 		trainingUsecase: training,
 		evalUsecase:     eval,
 		deployUsecase:   deploy,
 		extractUsecase:  extract,
-		ctx:             ctx,
-		cancel:          cancel,
 		log:             log.NewHelper(logger),
 	}
 }

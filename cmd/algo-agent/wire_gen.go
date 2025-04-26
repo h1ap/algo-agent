@@ -65,17 +65,16 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	extractServer := service.NewExtractServer(extractTaskUsecase, logger)
 	grpcServer := server.NewGRPCServer(confServer, ossServer, deployServer, dockerServer, trainServer, evalServer, extractServer, logger)
 	httpServer := server.NewHTTPServer(confServer, ossServer, deployServer, dockerServer, trainServer, evalServer, extractServer, logger)
-	gpuManager := data.NewNvidiaGpuManager(logger)
-	gpuUsecase := biz.NewGpuUsecase(confData, gpuManager, mqService, logger)
 	taskCheckerUsecase := biz.NewTaskCheckerUsecase(trainingTaskUsecase, evalTaskUsecase, deployUsecase, extractTaskUsecase, logger)
-	jobServer := service.CreateJobServer(gpuUsecase, taskCheckerUsecase, logger)
-	nodeOfflineServer := service.CreateNodeOfflineServer(confData, mqService, logger)
+	cronServer := service.NewCronServer(taskCheckerUsecase)
+	server2 := server.NewTaskServer(cronServer, logger)
+	nodeOfflineServer := service.NewNodeOfflineServer(confData, mqService, logger)
 	rabbitMQUsecase := biz.NewRabbitMQUsecase(mqService, trainingTaskUsecase, evalTaskUsecase, deployUsecase, extractTaskUsecase, logger)
-	rabbitMQConsumerServer, err := service.CreateRabbitMQConsumerServer(rabbitMQUsecase, logger)
+	rabbitMQConsumerServer, err := service.NewRabbitMQConsumerServer(rabbitMQUsecase, logger)
 	if err != nil {
 		return nil, nil, err
 	}
-	app := newApp(logger, grpcServer, httpServer, jobServer, nodeOfflineServer, rabbitMQConsumerServer)
+	app := newApp(logger, grpcServer, httpServer, server2, nodeOfflineServer, rabbitMQConsumerServer)
 	return app, func() {
 	}, nil
 }
