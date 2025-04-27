@@ -3,6 +3,7 @@ package service
 import (
 	"algo-agent/internal/biz"
 	"algo-agent/internal/conf"
+
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 )
@@ -88,7 +89,8 @@ func NewRabbitMQConsumerServer(
 	l := log.NewHelper(log.With(logger, "module", "service/rabbitmq-consumer"))
 
 	rmc := &RabbitMQConsumerServer{
-		uc: uc,
+		uc:  uc,
+		log: l,
 	}
 
 	l.Info("RabbitMQ消费者服务器创建成功")
