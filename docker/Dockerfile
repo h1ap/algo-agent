@@ -26,6 +26,8 @@ COPY --from=builder /src/bin /app
 COPY --from=builder /src/configs /app
 COPY --from=builder /src/docker/docker-entrypoint.sh /app
 
+RUN chmod +x /app/docker-entrypoint.sh
+
 WORKDIR /app
 RUN ls -la
 
