@@ -11,6 +11,12 @@ RUN GOPROXY=https://goproxy.cn make build
 
 FROM docker.mybacc.com/debian:stable-slim
 
+# 使用中科大镜像源
+RUN echo "deb https://mirrors.ustc.edu.cn/debian/ stable main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+    echo "deb https://mirrors.ustc.edu.cn/debian/ stable-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+    echo "deb https://mirrors.ustc.edu.cn/debian/ stable-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+    echo "deb https://mirrors.ustc.edu.cn/debian-security stable-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		ca-certificates  \
         netbase \
