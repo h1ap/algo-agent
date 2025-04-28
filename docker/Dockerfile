@@ -24,6 +24,7 @@ RUN apt-get update && \
 
 COPY --from=builder /src/bin /app
 COPY --from=builder /src/configs /app
+COPY --from=builder /src/docker/docker-entrypoint.sh /app
 
 WORKDIR /app
 RUN ls -la
