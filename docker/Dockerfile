@@ -1,10 +1,10 @@
 FROM docker.mybacc.com/golang:1.24 AS builder
 
-COPY . /src
+# 复制项目文件
+COPY ../. /src
 WORKDIR /src
 
 # 构建 dlv 调试工具
-RUN ls -la
 RUN GOPROXY=https://goproxy.cn make build
 
 FROM docker.mybacc.com/debian:stable-slim
