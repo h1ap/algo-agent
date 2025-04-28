@@ -5,8 +5,6 @@ WORKDIR /src
 
 # 构建 dlv 调试工具
 RUN GOPROXY=https://goproxy.cn make build
-RUN ls -la
-
 
 FROM docker.mybacc.com/debian:stable-slim
 
@@ -27,8 +25,9 @@ RUN apt-get update && \
 COPY --from=builder /src/bin /app
 
 WORKDIR /app
+RUN ls -la
 
 EXPOSE 30011
 VOLUME /data/conf
 
-CMD ["./bin/server", "-conf", "/data/conf"]
+CMD ["./app/server", "-conf", "/data/conf"]
