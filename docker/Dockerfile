@@ -8,12 +8,14 @@ RUN GOPROXY=https://goproxy.cn make build
 
 FROM docker.mybacc.com/debian:stable-slim
 
-# 使用中科大镜像源
-RUN sed -i 's/deb.debian.org/mirrors.huaweicloud.com/g' /etc/apt/sources.list && \
-    sed -i 's|security.debian.org/debian-security|mirrors.huaweicloud.com/debian-security|g' /etc/apt/sources.list
+# 创建并配置华为云镜像源
+RUN echo "deb http://mirrors.huaweicloud.com/debian/ stable main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+    echo "deb http://mirrors.huaweicloud.com/debian/ stable-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+    echo "deb http://mirrors.huaweicloud.com/debian/ stable-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+    echo "deb http://mirrors.huaweicloud.com/debian-security stable-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list
 
 # 更新并安装必要的包
-RUN apt-get update --allow-insecure-repositories && \
+RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates && \
     apt-get install -y netbase \
     && rm -rf /var/lib/apt/lists/ \
