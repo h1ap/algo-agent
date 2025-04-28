@@ -3,9 +3,6 @@ package biz
 import (
 	"algo-agent/internal/conf"
 	"algo-agent/internal/utils"
-	"context"
-	"time"
-
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 )
@@ -146,7 +143,6 @@ func NewEvalTaskUsecase(
 }
 
 func NewGpuUsecase(cfg *conf.Data, g GpuManager, mq MqService, logger log.Logger) *GpuUsecase {
-	ctx, cancel := context.WithCancel(context.Background())
 	// 获取节点名称，优先使用Node配置
 	nodeName := ""
 	if cfg.Node != nil {
@@ -156,15 +152,12 @@ func NewGpuUsecase(cfg *conf.Data, g GpuManager, mq MqService, logger log.Logger
 	}
 
 	return &GpuUsecase{
-		g:              g,
-		mq:             mq,
-		tsn:            cfg.Services.Train,
-		nodeName:       nodeName,
-		ipAddress:      utils.GetLocalIP(),
-		ctx:            ctx,
-		cancel:         cancel,
-		reportInterval: 20 * time.Second, // 默认20秒上报一次
-		log:            log.NewHelper(logger),
+		g:         g,
+		mq:        mq,
+		tsn:       cfg.Services.Train,
+		nodeName:  nodeName,
+		ipAddress: utils.GetLocalIP(),
+		log:       log.NewHelper(logger),
 	}
 }
 
@@ -174,6 +167,7 @@ func NewTaskCheckerUsecase(
 	eval *EvalTaskUsecase,
 	deploy *DeployUsecase,
 	extract *ExtractTaskUsecase,
+	gpu *GpuUsecase,
 	logger log.Logger,
 ) *TaskCheckerUsecase {
 	return &TaskCheckerUsecase{
@@ -181,6 +175,7 @@ func NewTaskCheckerUsecase(
 		evalUsecase:     eval,
 		deployUsecase:   deploy,
 		extractUsecase:  extract,
+		gpuUsecase:      gpu,
 		log:             log.NewHelper(logger),
 	}
 }

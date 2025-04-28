@@ -43,6 +43,14 @@ func NewTaskServer(service *service.CronServer, logger log.Logger) *cron.Server 
 		}
 	}
 
+	reportSystemMetricsFunc := func() {
+		err := service.RunReportSystemMetrics(ctx)
+		if err != nil {
+			helper.Error(err)
+			return
+		}
+	}
+
 	srv := cron.NewServer(
 		cron.Logger(logger),
 		cron.WithContext(ctx),
@@ -61,6 +69,10 @@ func NewTaskServer(service *service.CronServer, logger log.Logger) *cron.Server 
 
 		cron.RegisterFunc("@every 30s", "checkExtractTaskFunc", func() {
 			checkExtractTaskFunc()
+		}),
+
+		cron.RegisterFunc("@every 20s", "reportSystemMetricsFunc", func() {
+			reportSystemMetricsFunc()
 		}),
 	)
 

@@ -3,10 +3,6 @@ package service
 import (
 	"algo-agent/internal/biz"
 	"context"
-	"fmt"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"runtime"
 )
 
@@ -21,14 +17,14 @@ func NewCronServer(tcu *biz.TaskCheckerUsecase) *CronServer {
 }
 
 func (s *CronServer) RunCheckTrainingTaskService(ctx context.Context) error {
-	ctx, span := otel.Tracer("Service").Start(ctx, "RunCheckTrainingTaskService", trace.WithSpanKind(trace.SpanKindProducer))
+	// ctx, span := otel.Tracer("Service").Start(ctx, "RunCheckTrainingTaskService", trace.WithSpanKind(trace.SpanKindProducer))
 	defer func() {
 		if err := recover(); err != nil {
 			buf := make([]byte, 2048)
 			runtime.Stack(buf, false)
-			span.SetStatus(codes.Error, fmt.Sprintf("%v", err))
+			// span.SetStatus(codes.Error, fmt.Sprintf("%v", err))
 		}
-		span.End()
+		// span.End()
 	}()
 
 	s.tcu.CheckTrainingTask(ctx)
@@ -36,14 +32,14 @@ func (s *CronServer) RunCheckTrainingTaskService(ctx context.Context) error {
 }
 
 func (s *CronServer) RunCheckEvalTaskService(ctx context.Context) error {
-	ctx, span := otel.Tracer("Service").Start(ctx, "RunCheckEvalTaskService", trace.WithSpanKind(trace.SpanKindProducer))
+	// ctx, span := otel.Tracer("Service").Start(ctx, "RunCheckEvalTaskService", trace.WithSpanKind(trace.SpanKindProducer))
 	defer func() {
 		if err := recover(); err != nil {
 			buf := make([]byte, 2048)
 			runtime.Stack(buf, false)
-			span.SetStatus(codes.Error, fmt.Sprintf("%v", err))
+			// span.SetStatus(codes.Error, fmt.Sprintf("%v", err))
 		}
-		span.End()
+		// span.End()
 	}()
 
 	s.tcu.CheckEvalTask(ctx)
@@ -51,14 +47,14 @@ func (s *CronServer) RunCheckEvalTaskService(ctx context.Context) error {
 }
 
 func (s *CronServer) RunCheckDeployService(ctx context.Context) error {
-	ctx, span := otel.Tracer("Service").Start(ctx, "RunCheckDeployService", trace.WithSpanKind(trace.SpanKindProducer))
+	// ctx, span := otel.Tracer("Service").Start(ctx, "RunCheckDeployService", trace.WithSpanKind(trace.SpanKindProducer))
 	defer func() {
 		if err := recover(); err != nil {
 			buf := make([]byte, 2048)
 			runtime.Stack(buf, false)
-			span.SetStatus(codes.Error, fmt.Sprintf("%v", err))
+			// span.SetStatus(codes.Error, fmt.Sprintf("%v", err))
 		}
-		span.End()
+		// span.End()
 	}()
 
 	s.tcu.CheckDeployService(ctx)
@@ -66,16 +62,30 @@ func (s *CronServer) RunCheckDeployService(ctx context.Context) error {
 }
 
 func (s *CronServer) RunCheckExtractTaskService(ctx context.Context) error {
-	ctx, span := otel.Tracer("Service").Start(ctx, "RunCheckExtractTaskService", trace.WithSpanKind(trace.SpanKindProducer))
+	// ctx, span := otel.Tracer("Service").Start(ctx, "RunCheckExtractTaskService", trace.WithSpanKind(trace.SpanKindProducer))
 	defer func() {
 		if err := recover(); err != nil {
 			buf := make([]byte, 2048)
 			runtime.Stack(buf, false)
-			span.SetStatus(codes.Error, fmt.Sprintf("%v", err))
+			// span.SetStatus(codes.Error, fmt.Sprintf("%v", err))
 		}
-		span.End()
+		// span.End()
 	}()
 
 	s.tcu.CheckExtractTask(ctx)
+	return nil
+}
+
+func (s *CronServer) RunReportSystemMetrics(ctx context.Context) error {
+	// ctx, span := otel.Tracer("Service").Start(ctx, "RunReportSystemMetrics", trace.WithSpanKind(trace.SpanKindProducer))
+	defer func() {
+		if err := recover(); err != nil {
+			buf := make([]byte, 2048)
+			runtime.Stack(buf, false)
+			// span.SetStatus(codes.Error, fmt.Sprintf("%v", err))
+		}
+		// span.End()
+	}()
+	s.tcu.ReportSystemMetrics(ctx)
 	return nil
 }

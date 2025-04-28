@@ -11,6 +11,7 @@ type TaskCheckerUsecase struct {
 	evalUsecase     *EvalTaskUsecase
 	deployUsecase   *DeployUsecase
 	extractUsecase  *ExtractTaskUsecase
+	gpuUsecase      *GpuUsecase
 
 	log *log.Helper
 }
@@ -41,4 +42,10 @@ func (uc *TaskCheckerUsecase) CheckExtractTask(ctx context.Context) {
 	uc.log.Debug("检查提取任务状态开始...")
 	uc.extractUsecase.CheckTask(ctx)
 	uc.log.Debug("检查提取任务状态结束...")
+}
+
+func (uc *TaskCheckerUsecase) ReportSystemMetrics(ctx context.Context) {
+	uc.log.Debug("上报系统指标开始...")
+	uc.gpuUsecase.ReportSystemMetrics(ctx)
+	uc.log.Debug("上报系统指标结束...")
 }
