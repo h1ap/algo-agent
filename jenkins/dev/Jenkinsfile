@@ -24,7 +24,7 @@ pipeline {
             steps {
                 script {
                     echo '构建Docker镜像'
-                    sh "docker build -t ${IMAGE_NAME} ${DOCKER_PATH}"
+                    sh "docker build -t ${IMAGE_NAME} -f ${DOCKER_PATH}/Dockerfile ."
 
                     // 标记镜像
                     echo '标记Docker镜像'
