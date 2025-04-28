@@ -1,0 +1,166 @@
+pipeline {
+    agent any
+    environment {
+        IMAGE_NAME = 'zhihua-go1.24'
+        SERVICE_NAME = 'algo-agent'
+        ARTIFACT_ID = 'algo-agent'
+        DOCKER_PATH = 'algo-agent/docker'
+        PORT = 30011
+        MAPPED_DEBUG_PORT = 30016
+        DEBUG_PORT = 30016
+        SERVER_DOCKER ="192.168.110.238:5000"
+        WORK_DIR = "/opt/docker-env/algo-agent"
+        REMOVE_DOCKER_IMAGE_SCRIPT = "remove_docker_image.sh"
+    }
+    stages {
+        stage('拉取Git代码') {
+            steps {
+                checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'code_deployment', url: 'http://192.168.110.101:9001/zhihuacd/algo-agent.git']])
+                echo '拉取Git代码--success'
+            }
+        }
+
+        stage('制作自定义镜像并发布') {
+            steps {
+                script {
+                    echo '构建Docker镜像'
+                    sh "docker build -t ${IMAGE_NAME} ${DOCKER_PATH}"
+
+                    // 标记镜像
+                    echo '标记Docker镜像'
+                    sh "docker tag ${IMAGE_NAME} ${SERVER_DOCKER}/${IMAGE_NAME}:1.0.0"
+
+                    // 推送镜像，如果版本存在，会覆盖
+                    sh "docker push ${SERVER_DOCKER}/${IMAGE_NAME}:1.0.0"
+
+                    // 清空悬挂镜像
+                    // docker images -f "dangling=true" -f "reference=image-name*" -q | xargs -r docker rmi -f
+                    echo '清理悬挂镜像'
+                    sh "docker images -f 'dangling=true' -f 'reference=${SERVER_DOCKER}/${IMAGE_NAME}*' -q | xargs -r docker rmi -f"
+
+                    echo '构建镜像--success'
+
+                    echo '删除远程服务器上的旧镜像'
+                    sshPublisher(
+                            publishers: [sshPublisherDesc(configName: 'heap',
+                                    transfers: [
+                                            sshTransfer(
+                                                    cleanRemote: false,
+                                                    excludes: '',
+                                                    execCommand: """
+                                                        docker stop ${SERVICE_NAME} && docker rm ${SERVICE_NAME}
+                                                    """,
+                                                    execTimeout: 120000,
+                                                    flatten: false,
+                                                    makeEmptyDirs: false,
+                                                    noDefaultExcludes: false,
+                                                    patternSeparator: '[, ]+',
+                                                    remoteDirectory: '',
+                                                    remoteDirectorySDF: false,
+                                                    removePrefix: '',
+                                                    sourceFiles: ''
+                                            )
+                                    ],
+                                    usePromotionTimestamp: false,
+                                    useWorkspaceInPromotion: false,
+                                    verbose: true
+                            )
+                            ]
+                    )
+                }
+                // 发布服务
+                echo "发布服务"
+                echo """
+                    docker run -d  --restart=unless-stopped --stop-timeout 30 \
+                        -p ${PORT}:${PORT}  \
+                        -p ${MAPPED_DEBUG_PORT}:${DEBUG_PORT} \
+                        -v /var/run/docker.sock:/var/run/docker.sock \
+                        -v /data/node_data:/data/node_data \
+                        --memory=1000m \
+                        --name ${SERVICE_NAME} localhost:5000/${IMAGE_NAME}:1.0.0
+                    """
+                sshPublisher(
+                        publishers: [sshPublisherDesc(configName: 'heap',
+                                transfers: [
+                                        sshTransfer(
+                                                cleanRemote: false,
+                                                excludes: '',
+                                                execCommand:
+                                                        """
+                                                        docker run -d  --restart=unless-stopped --stop-timeout 30 \
+                                                          -p ${PORT}:${PORT}  \
+                                                          -p ${MAPPED_DEBUG_PORT}:${DEBUG_PORT} \
+                                                          -v /var/run/docker.sock:/var/run/docker.sock \
+                                                          -v /data/node_data:/data/node_data \
+                                                          --memory=1000m \
+                                                          --name ${SERVICE_NAME} localhost:5000/${IMAGE_NAME}:1.0.0
+                                                        """,
+                                                execTimeout: 120000,
+                                                flatten: false,
+                                                makeEmptyDirs: false,
+                                                noDefaultExcludes: false,
+                                                patternSeparator: '[, ]+',
+                                                remoteDirectory: '',
+                                                remoteDirectorySDF: false,
+                                                removePrefix: '',
+                                                sourceFiles: ''
+                                        )
+                                ],
+                                usePromotionTimestamp: false,
+                                useWorkspaceInPromotion: false,
+                                verbose: false
+                        )
+                        ]
+                )
+
+                echo '制作自定义镜像并发布 -- 完成'
+            }
+        }
+    }
+
+    post {
+        success {
+            script {
+                // 调用公共方法获取格式化的持续时间
+                def formattedDuration = getFormattedDuration()
+
+                // 发送钉钉消息
+                dingtalk(robot: 'da765e54-367e-44f8-8f57-3cad98de050b',
+                        type: 'MARKDOWN',
+                        title: "${JOB_NAME}，执行成功。",
+                        text: [
+                                '# ' + "${JOB_NAME}",
+                                '---',
+                                '- 任务：' + "[#${BUILD_ID}](${BUILD_URL})",
+                                '- 状态：' + "<font color=green>成功</font>",
+                                '- 持续时间：' + formattedDuration
+                        ])
+            }
+        }
+        failure {
+            script {
+                // 调用公共方法获取格式化的持续时间
+                def formattedDuration = getFormattedDuration()
+
+                // 发送钉钉消息
+                dingtalk(robot: 'da765e54-367e-44f8-8f57-3cad98de050b',
+                        type: 'MARKDOWN',
+                        title: "${JOB_NAME}，执行失败。",
+                        text: [
+                                '# ' + "${JOB_NAME}",
+                                '---',
+                                '- 任务：' + "[#${BUILD_ID}](${BUILD_URL})",
+                                '- 状态：' + "<font color=red>失败</font>",
+                                '- 持续时间：' + formattedDuration
+                        ])
+            }
+        }
+    }
+}
+// 公共方法：获取格式化的持续时间
+def getFormattedDuration() {
+    def durationMillis = currentBuild.duration ?: 0
+    def durationSeconds = (durationMillis / 1000).intValue() % 60
+    def durationMinutes = ((durationMillis / (1000 * 60)).intValue()) % 60
+    return String.format('%02d:%02d', durationMinutes, durationSeconds)
+}

@@ -1,11 +1,12 @@
-FROM golang:1.19 AS builder
+FROM docker.1ms.run/golang:1.24 AS builder
 
 COPY . /src
 WORKDIR /src
 
-RUN GOPROXY=https://goproxy.cn make build
+# 构建 dlv 调试工具
+RUN GOPROXY=https://goproxy.cn && go install github.com/go-delve/delve/cmd/dlv@latest && make build
 
-FROM debian:stable-slim
+FROM docker.1ms.run/debian:stable-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		ca-certificates  \
@@ -17,8 +18,7 @@ COPY --from=builder /src/bin /app
 
 WORKDIR /app
 
-EXPOSE 8000
-EXPOSE 9000
+EXPOSE 30011
 VOLUME /data/conf
 
 CMD ["./server", "-conf", "/data/conf"]
