@@ -4,6 +4,7 @@ COPY . /src
 WORKDIR /src
 
 # 构建 dlv 调试工具
+RUN ls -la
 RUN GOPROXY=https://goproxy.cn make build
 
 FROM docker.mybacc.com/debian:stable-slim
