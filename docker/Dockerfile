@@ -5,6 +5,8 @@ WORKDIR /src
 
 # 构建 dlv 调试工具
 RUN GOPROXY=https://goproxy.cn make build
+RUN ls -la
+
 
 FROM docker.mybacc.com/debian:stable-slim
 
@@ -29,4 +31,4 @@ WORKDIR /app
 EXPOSE 30011
 VOLUME /data/conf
 
-CMD ["./server", "-conf", "/data/conf"]
+CMD ["./bin/server", "-conf", "/data/conf"]
