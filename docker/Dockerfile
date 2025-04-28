@@ -9,10 +9,8 @@ RUN GOPROXY=https://goproxy.cn make build
 FROM docker.mybacc.com/debian:stable-slim
 
 # 使用中科大镜像源
-RUN echo "deb https://mirrors.ustc.edu.cn/debian/ stable main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
-    echo "deb https://mirrors.ustc.edu.cn/debian/ stable-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
-    echo "deb https://mirrors.ustc.edu.cn/debian/ stable-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
-    echo "deb https://mirrors.ustc.edu.cn/debian-security stable-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list
+RUN sed -i 's/deb.debian.org/mirrors.huaweicloud.com/g' /etc/apt/sources.list ;\
+    sed -i 's|security.debian.org/debian-security|mirrors.huaweicloud.com/debian-security|g' /etc/apt/sources.list ;
 
 # 更新并安装必要的包
 RUN apt-get update --allow-insecure-repositories && \
