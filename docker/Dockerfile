@@ -32,4 +32,4 @@ RUN ls -la
 EXPOSE 30011
 VOLUME /data/conf
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
