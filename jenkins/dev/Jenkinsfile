@@ -1,10 +1,10 @@
 pipeline {
     agent any
     environment {
-        IMAGE_NAME = 'zhihua-go1.24'
+        IMAGE_NAME = 'algo-agent'
         SERVICE_NAME = 'algo-agent'
         ARTIFACT_ID = 'algo-agent'
-        DOCKER_PATH = 'algo-agent/docker'
+        DOCKER_PATH = './docker'
         PORT = 30011
         MAPPED_DEBUG_PORT = 30016
         DEBUG_PORT = 30016
