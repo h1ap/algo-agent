@@ -23,6 +23,7 @@ RUN apt-get update && \
     && apt-get autoclean -y
 
 COPY --from=builder /src/bin /app
+COPY --from=builder /src/configs /app
 
 WORKDIR /app
 RUN ls -la
@@ -30,4 +31,4 @@ RUN ls -la
 EXPOSE 30011
 VOLUME /data/conf
 
-CMD ["./app/server", "-conf", "/data/conf"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
