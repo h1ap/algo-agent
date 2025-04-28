@@ -78,7 +78,7 @@ pipeline {
                         -v /var/run/docker.sock:/var/run/docker.sock \
                         -v /data/node_data:/data/node_data \
                         --memory=1000m \
-                        --name ${SERVICE_NAME} localhost:5000/${IMAGE_NAME}:1.0.0
+                        --name ${SERVICE_NAME} ${SERVER_DOCKER}/${IMAGE_NAME}:1.0.0
                     """
                 sshPublisher(
                         publishers: [sshPublisherDesc(configName: 'heap',
@@ -94,7 +94,7 @@ pipeline {
                                                           -v /var/run/docker.sock:/var/run/docker.sock \
                                                           -v /data/node_data:/data/node_data \
                                                           --memory=1000m \
-                                                          --name ${SERVICE_NAME} localhost:5000/${IMAGE_NAME}:1.0.0
+                                                          --name ${SERVICE_NAME} ${SERVER_DOCKER}/${IMAGE_NAME}:1.0.0
                                                         """,
                                                 execTimeout: 120000,
                                                 flatten: false,
