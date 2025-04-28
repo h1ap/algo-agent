@@ -48,6 +48,7 @@ pipeline {
                                                     cleanRemote: false,
                                                     excludes: '',
                                                     execCommand: """
+                                                        docker pull ${SERVER_DOCKER}/${IMAGE_NAME}:1.0.0
                                                         docker stop ${SERVICE_NAME} && docker rm ${SERVICE_NAME}
                                                     """,
                                                     execTimeout: 120000,
