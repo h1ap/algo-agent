@@ -1,4 +1,4 @@
-FROM docker.1ms.run/golang:1.24 AS builder
+FROM docker.mybacc.com/golang:1.24 AS builder
 
 COPY . /src
 WORKDIR /src
@@ -6,7 +6,7 @@ WORKDIR /src
 # 构建 dlv 调试工具
 RUN GOPROXY=https://goproxy.cn && go install github.com/go-delve/delve/cmd/dlv@latest && make build
 
-FROM docker.1ms.run/debian:stable-slim
+FROM docker.mybacc.com/debian:stable-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		ca-certificates  \
