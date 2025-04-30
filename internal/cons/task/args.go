@@ -1,4 +1,4 @@
-package tasks
+package task
 
 // 训练参数 folder
 const (

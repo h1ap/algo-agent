@@ -1,22 +1,22 @@
-package tasks
+package task
 
 // TaskType 表示任务类型
 type TaskType struct {
-	Code int
-	Name string
+	code int
+	name string
 }
 
 var (
 	// TRAIN 训练类型
 	TRAIN = TaskType{
-		Code: 0,
-		Name: "训练",
+		code: 0,
+		name: "训练",
 	}
 
 	// EVALUATE 评估类型
 	EVALUATE = TaskType{
-		Code: 1,
-		Name: "评估",
+		code: 1,
+		name: "评估",
 	}
 )
 
@@ -26,12 +26,12 @@ var AllTaskTypes = []TaskType{
 	EVALUATE,
 }
 
-// GetCode 获取任务类型的代码
-func (t TaskType) GetCode() int {
-	return t.Code
+// Code 获取编码
+func (e *TaskType) Code() int {
+	return e.code
 }
 
-// GetName 获取任务类型的名称
-func (t TaskType) GetName() string {
-	return t.Name
+// Name 获取枚举名
+func (e *TaskType) Name() string {
+	return e.name
 }

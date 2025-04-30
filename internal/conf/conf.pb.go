@@ -478,8 +478,7 @@ type Data_RabbitMQ struct {
 	DefaultRoutingKey   string                  `protobuf:"bytes,8,opt,name=default_routing_key,json=defaultRoutingKey,proto3" json:"default_routing_key,omitempty"`
 	ServiceQueuePrefix  string                  `protobuf:"bytes,9,opt,name=service_queue_prefix,json=serviceQueuePrefix,proto3" json:"service_queue_prefix,omitempty"`
 	NodeQueuePrefix     string                  `protobuf:"bytes,10,opt,name=node_queue_prefix,json=nodeQueuePrefix,proto3" json:"node_queue_prefix,omitempty"`
-	NodeName            string                  `protobuf:"bytes,11,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
-	Listener            *Data_RabbitMQ_Listener `protobuf:"bytes,12,opt,name=listener,proto3" json:"listener,omitempty"`
+	Listener            *Data_RabbitMQ_Listener `protobuf:"bytes,11,opt,name=listener,proto3" json:"listener,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -580,13 +579,6 @@ func (x *Data_RabbitMQ) GetServiceQueuePrefix() string {
 func (x *Data_RabbitMQ) GetNodeQueuePrefix() string {
 	if x != nil {
 		return x.NodeQueuePrefix
-	}
-	return ""
-}
-
-func (x *Data_RabbitMQ) GetNodeName() string {
-	if x != nil {
-		return x.NodeName
 	}
 	return ""
 }
@@ -925,7 +917,7 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x89\x0e\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xec\r\n" +
 	"\x04Data\x125\n" +
 	"\bdatabase\x18\x01 \x01(\v2\x19.kratos.api.Data.DatabaseR\bdatabase\x12,\n" +
 	"\x05redis\x18\x02 \x01(\v2\x16.kratos.api.Data.RedisR\x05redis\x125\n" +
@@ -942,7 +934,7 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x12<\n" +
 	"\fread_timeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\vreadTimeout\x12>\n" +
-	"\rwrite_timeout\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\x1a\xb5\x05\n" +
+	"\rwrite_timeout\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\x1a\x98\x05\n" +
 	"\bRabbitMQ\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\x05R\x04port\x12\x1a\n" +
@@ -954,9 +946,8 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\x13default_routing_key\x18\b \x01(\tR\x11defaultRoutingKey\x120\n" +
 	"\x14service_queue_prefix\x18\t \x01(\tR\x12serviceQueuePrefix\x12*\n" +
 	"\x11node_queue_prefix\x18\n" +
-	" \x01(\tR\x0fnodeQueuePrefix\x12\x1b\n" +
-	"\tnode_name\x18\v \x01(\tR\bnodeName\x12>\n" +
-	"\blistener\x18\f \x01(\v2\".kratos.api.Data.RabbitMQ.ListenerR\blistener\x1a\xfd\x01\n" +
+	" \x01(\tR\x0fnodeQueuePrefix\x12>\n" +
+	"\blistener\x18\v \x01(\v2\".kratos.api.Data.RabbitMQ.ListenerR\blistener\x1a\xfd\x01\n" +
 	"\bListener\x12,\n" +
 	"\x12retry_max_attempts\x18\x01 \x01(\x05R\x10retryMaxAttempts\x12O\n" +
 	"\x16retry_initial_interval\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x14retryInitialInterval\x12)\n" +

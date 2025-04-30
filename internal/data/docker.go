@@ -34,6 +34,11 @@ type DockerRepo struct {
 		close     func() error
 		isRunning bool
 	}
+	// 添加待处理日志队列
+	pendingLogs map[string][]struct {
+		content string
+		isError bool
+	}
 }
 
 // FindContainerByName 根据容器名查找容器
@@ -332,7 +337,13 @@ func (r *DockerRepo) processLogFrame(log string, isError bool, logConsumer func(
 // StartLogStream 开始日志流
 func (r *DockerRepo) StartLogStream(ctx context.Context, containerID string, logConsumer func(string)) {
 	r.lock.Lock()
-	defer r.lock.Unlock()
+	// 初始化待处理日志队列（如果未初始化）
+	if r.pendingLogs == nil {
+		r.pendingLogs = make(map[string][]struct {
+			content string
+			isError bool
+		})
+	}
 
 	// 如果已经有日志流在运行，关闭它
 	if stream, exists := r.logStreams[containerID]; exists && stream.isRunning {
@@ -340,6 +351,15 @@ func (r *DockerRepo) StartLogStream(ctx context.Context, containerID string, log
 			_ = stream.close()
 		}
 	}
+
+	// 初始化logStreams（如果未初始化）
+	if r.logStreams == nil {
+		r.logStreams = make(map[string]struct {
+			close     func() error
+			isRunning bool
+		})
+	}
+	r.lock.Unlock()
 
 	options := container.LogsOptions{
 		ShowStdout: true,
@@ -353,6 +373,7 @@ func (r *DockerRepo) StartLogStream(ctx context.Context, containerID string, log
 		return
 	}
 
+	r.lock.Lock()
 	r.logStreams[containerID] = struct {
 		close     func() error
 		isRunning bool
@@ -360,6 +381,7 @@ func (r *DockerRepo) StartLogStream(ctx context.Context, containerID string, log
 		close:     logs.Close,
 		isRunning: true,
 	}
+	r.lock.Unlock()
 
 	r.log.WithContext(ctx).Infof("started log streaming for container: %s", containerID)
 
@@ -373,34 +395,69 @@ func (r *DockerRepo) StartLogStream(ctx context.Context, containerID string, log
 				stream.isRunning = false
 				r.logStreams[containerID] = stream
 			}
+
+			// 处理所有剩余的待处理日志
+			if pendingLogsForContainer, exists := r.pendingLogs[containerID]; exists && len(pendingLogsForContainer) > 0 {
+				for _, logEntry := range pendingLogsForContainer {
+					r.processLogFrame(logEntry.content, logEntry.isError, logConsumer)
+				}
+				// 清空队列
+				r.pendingLogs[containerID] = nil
+			}
 		}()
 
+		// 增加缓冲区大小，减少日志截断风险
 		buf := make([]byte, 8192)
+
+		maxRetries := 3
+		retryCount := 0
+
 		for {
-			// 检查容器是否仍在运行
+			// 检查容器是否仍在运行（减少锁的频繁获取）
+			isRunning := false
 			r.lock.Lock()
-			stream, exists := r.logStreams[containerID]
-			isRunning := exists && stream.isRunning
+			if stream, exists := r.logStreams[containerID]; exists {
+				isRunning = stream.isRunning
+			}
 			r.lock.Unlock()
 
 			if !isRunning {
-				return
+				break
 			}
 
 			// 读取日志
 			n, err := logs.Read(buf)
+
+			// 错误处理增强
 			if err != nil {
-				if err != io.EOF {
-					r.log.Errorf("error reading container logs: %v", err)
+				if err == io.EOF {
+					break
 				}
-				return
+
+				r.log.Errorf("error reading container logs: %v", err)
+
+				// 简单的重试机制
+				retryCount++
+				if retryCount > maxRetries {
+					r.log.Errorf("max retries exceeded, stopping log stream for container: %s", containerID)
+					break
+				}
+
+				// 短暂延迟后重试
+				time.Sleep(500 * time.Millisecond)
+				continue
 			}
+
+			// 重置重试计数器
+			retryCount = 0
 
 			if n > 0 {
 				// Docker日志格式：前8个字节为头部，第一个字节表示流类型（1=stdout，2=stderr）
 				headerSize := 8
-				for i := 0; i < n; i += headerSize {
+				i := 0
+				for i < n {
 					headerStart := i
+					// 确保有足够的字节读取头部
 					if headerStart+headerSize > n {
 						break
 					}
@@ -414,15 +471,38 @@ func (r *DockerRepo) StartLogStream(ctx context.Context, containerID string, log
 					// 确定有效载荷的结束位置
 					payloadEnd := headerStart + headerSize + payloadSize
 					if payloadEnd > n {
+						// 日志帧不完整，等待下一次读取
 						break
 					}
 
 					isError := buf[headerStart] == 2 // 2表示stderr
-					payload := buf[headerStart+headerSize : payloadEnd]
-					r.processLogFrame(string(payload), isError, logConsumer)
+					payload := string(buf[headerStart+headerSize : payloadEnd])
 
-					// 移动到下一个消息
-					i = payloadEnd - headerSize
+					// 将日志添加到待处理队列
+					r.lock.Lock()
+					r.pendingLogs[containerID] = append(r.pendingLogs[containerID], struct {
+						content string
+						isError bool
+					}{
+						content: payload,
+						isError: isError,
+					})
+					r.lock.Unlock()
+
+					// 处理待处理日志
+					r.lock.Lock()
+					pendingLogsForContainer := r.pendingLogs[containerID]
+					// 清空队列
+					r.pendingLogs[containerID] = nil
+					r.lock.Unlock()
+
+					// 处理队列中的所有日志
+					for _, logEntry := range pendingLogsForContainer {
+						r.processLogFrame(logEntry.content, logEntry.isError, logConsumer)
+					}
+
+					// 移动到下一个日志帧
+					i = payloadEnd
 				}
 			}
 		}
@@ -448,11 +528,25 @@ func (r *DockerRepo) StopLogStream(ctx context.Context, containerName string, lo
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
+	// 处理所有剩余的待处理日志
+	if r.pendingLogs != nil {
+		if pendingLogsForContainer, exists := r.pendingLogs[containerID]; exists && len(pendingLogsForContainer) > 0 {
+			r.log.WithContext(ctx).Infof("processing %d pending logs before stopping stream", len(pendingLogsForContainer))
+			for _, logEntry := range pendingLogsForContainer {
+				r.processLogFrame(logEntry.content, logEntry.isError, logConsumer)
+			}
+			// 清空队列
+			delete(r.pendingLogs, containerID)
+		}
+	}
+
 	// 关闭日志流
 	if stream, exists := r.logStreams[containerID]; exists {
 		stream.isRunning = false
 		if stream.close != nil {
-			_ = stream.close()
+			if closeErr := stream.close(); closeErr != nil {
+				r.log.WithContext(ctx).Warnf("error closing log stream: %v", closeErr)
+			}
 		}
 		delete(r.logStreams, containerID)
 	}
@@ -711,13 +805,25 @@ func (r *DockerRepo) Close() {
 	// 关闭所有日志流
 	for containerID, stream := range r.logStreams {
 		if stream.isRunning && stream.close != nil {
-			_ = stream.close()
+			if err := stream.close(); err != nil {
+				r.log.Errorf("error closing log stream for container %s: %v", containerID, err)
+			}
 		}
 		delete(r.logStreams, containerID)
 	}
 
+	// 清空待处理日志队列
+	if r.pendingLogs != nil {
+		for containerID := range r.pendingLogs {
+			delete(r.pendingLogs, containerID)
+		}
+		r.pendingLogs = nil
+	}
+
 	// 关闭Docker客户端
 	if r.client != nil {
-		_ = r.client.Close()
+		if err := r.client.Close(); err != nil {
+			r.log.Errorf("error closing Docker client: %v", err)
+		}
 	}
 }

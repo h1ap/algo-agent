@@ -112,6 +112,7 @@ func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (biz.MqService, error) {
 	rabbitLogger := &rabbitLogger{log: l}
 
 	rc := c.Rabbitmq
+	nc := c.Node
 	if rc == nil || rc.Host == "" {
 		l.Error("RabbitMQ host is not set")
 		return nil, errors.New("RabbitMQ host is not set")
@@ -153,7 +154,7 @@ func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (biz.MqService, error) {
 
 	consumer, err := rabbitmq.NewConsumer(
 		conn,
-		getDynamicQueueName(rc),
+		getDynamicQueueName(rc, nc),
 		rabbitmq.WithConsumerOptionsRoutingKey(rc.DefaultRoutingKey),
 		rabbitmq.WithConsumerOptionsExchangeName(rc.DefaultExchangeName),
 		rabbitmq.WithConsumerOptionsExchangeDeclare,
@@ -172,7 +173,7 @@ func NewRabbitMQRepo(c *conf.Data, logger log.Logger) (biz.MqService, error) {
 		conn:      conn,
 		publisher: publisher,
 		consumer:  consumer,
-		conf:      rc,
+		rc:        rc,
 		log:       l,
 	}
 

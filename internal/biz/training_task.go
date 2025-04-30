@@ -12,6 +12,7 @@ import (
 
 	cc "algo-agent/internal/cons/container"
 	"algo-agent/internal/cons/file"
+	"algo-agent/internal/cons/task"
 	taskArgs "algo-agent/internal/cons/task"
 	ct "algo-agent/internal/cons/train"
 	mc "algo-agent/internal/model/container"
@@ -333,7 +334,7 @@ func (ttu *TrainingTaskUsecase) sendDockerLogData(ctx context.Context, taskId st
 	logMsg := &event.DockerLogRespMessage{
 		TaskId:   taskIdInt,
 		Log:      logText,
-		TaskType: 0, // 训练类型
+		TaskType: task.TRAIN.Code(), // 训练类型
 	}
 
 	if err := ttu.mq.SendToService(ctx, ttu.tsn, &event.ReqMessage{

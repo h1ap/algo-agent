@@ -5,6 +5,8 @@ import (
 	"algo-agent/internal/conf"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
+	"math/rand"
+	"time"
 )
 
 // ProviderSet is service providers.
@@ -64,11 +66,12 @@ func NewExtractServer(uc *biz.ExtractTaskUsecase, logger log.Logger) *ExtractSer
 // NewNodeOfflineServer 创建节点下线服务实例
 func NewNodeOfflineServer(cfg *conf.Data, mqService biz.MqService, logger log.Logger) *NodeOfflineServer {
 	// 获取节点名称，优先使用Node配置
-	nodeName := ""
+	source := rand.NewSource(time.Now().UnixNano())
+	// 创建一个新的 Rand 实例
+	r := rand.New(source)
+	nodeName := "unknow-node-" + string(rune(r.Intn(100)))
 	if cfg.Node != nil {
 		nodeName = cfg.Node.NodeName
-	} else if cfg.Rabbitmq != nil {
-		nodeName = cfg.Rabbitmq.NodeName
 	}
 
 	return &NodeOfflineServer{

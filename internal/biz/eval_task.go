@@ -692,7 +692,7 @@ func (etu *EvalTaskUsecase) sendDockerLogData(ctx context.Context, taskId string
 	logMsg := &event.DockerLogRespMessage{
 		TaskId:   taskIdInt,
 		Log:      logText,
-		TaskType: 1, // 评估类型
+		TaskType: taskArgs.EVALUATE.Code(), // 评估类型
 	}
 
 	if err := etu.mq.SendToService(ctx, etu.tsn, &event.ReqMessage{

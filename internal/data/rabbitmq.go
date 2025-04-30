@@ -15,13 +15,14 @@ type RabbitMQRepo struct {
 	conn      *rabbitmq.Conn
 	publisher *rabbitmq.Publisher
 	consumer  *rabbitmq.Consumer
-	conf      *conf.Data_RabbitMQ
+	rc        *conf.Data_RabbitMQ
+	nc        *conf.Data_Node
 	log       *log.Helper
 }
 
 // SendMessage 发送字符串消息
 func (r *RabbitMQRepo) SendMessage(ctx context.Context, exchangeName, routingKey string, message *event.ReqMessage) error {
-	rk := r.conf.Group + r.conf.ServiceQueuePrefix + routingKey
+	rk := r.rc.Group + r.rc.ServiceQueuePrefix + routingKey
 
 	messageJson, err := json.ToJSON(message)
 
@@ -47,7 +48,7 @@ func (r *RabbitMQRepo) SendMessage(ctx context.Context, exchangeName, routingKey
 
 // SendToQueue 发送消息到队列
 func (r *RabbitMQRepo) SendToQueue(ctx context.Context, queueName string, message *event.ReqMessage) error {
-	rk := r.conf.Group + r.conf.NodeQueuePrefix + queueName
+	rk := r.rc.Group + r.rc.NodeQueuePrefix + queueName
 
 	messageJson, err := json.ToJSON(message)
 
@@ -66,13 +67,13 @@ func (r *RabbitMQRepo) SendToQueue(ctx context.Context, queueName string, messag
 		return err
 	}
 
-	r.log.WithContext(ctx).Infof("message sent to queue: queueName=%s, message=%s", r.conf.DefaultExchangeName, rk, message)
+	r.log.WithContext(ctx).Infof("message sent to queue: queueName=%s, message=%s", r.rc.DefaultExchangeName, rk, message)
 	return nil
 }
 
 // SendToService 发送消息到特定服务
 func (r *RabbitMQRepo) SendToService(ctx context.Context, service string, message *event.ReqMessage) error {
-	rk := r.conf.Group + r.conf.ServiceQueuePrefix + service
+	rk := r.rc.Group + r.rc.ServiceQueuePrefix + service
 	messageJson, err := json.ToJSON(message)
 
 	if err != nil {
@@ -102,9 +103,9 @@ func (r *RabbitMQRepo) GetOrCreateConsumer(ctx context.Context) (*rabbitmq.Consu
 
 	consumer, err := rabbitmq.NewConsumer(
 		r.conn,
-		getDynamicQueueName(r.conf),
-		rabbitmq.WithConsumerOptionsRoutingKey(r.conf.DefaultRoutingKey),
-		rabbitmq.WithConsumerOptionsExchangeName(r.conf.DefaultExchangeName),
+		getDynamicQueueName(r.rc, r.nc),
+		rabbitmq.WithConsumerOptionsRoutingKey(r.rc.DefaultRoutingKey),
+		rabbitmq.WithConsumerOptionsExchangeName(r.rc.DefaultExchangeName),
 		rabbitmq.WithConsumerOptionsExchangeDeclare,
 		rabbitmq.WithConsumerOptionsExchangeDurable,
 	)
@@ -139,8 +140,8 @@ func (r *RabbitMQRepo) GetConnection() *rabbitmq.Conn {
 }
 
 // getDynamicQueueName 生成动态队列名称
-func getDynamicQueueName(c *conf.Data_RabbitMQ) string {
-	return c.Group + c.NodeQueuePrefix + c.NodeName
+func getDynamicQueueName(c *conf.Data_RabbitMQ, nc *conf.Data_Node) string {
+	return c.Group + c.NodeQueuePrefix + nc.NodeName
 }
 
 // rabbitLogger 适配器，将kratos日志转换为rabbitmq日志

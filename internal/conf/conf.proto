@@ -47,14 +47,13 @@ message Data {
     string default_routing_key = 8;
     string service_queue_prefix = 9;
     string node_queue_prefix = 10;
-    string node_name = 11;
     message Listener {
       int32 retry_max_attempts = 1;
       google.protobuf.Duration retry_initial_interval = 2;
       double retry_multiplier = 3;
       google.protobuf.Duration retry_max_interval = 4;
     }
-    Listener listener = 12;
+    Listener listener = 11;
   }
   message Oss {
     string endpoint = 1;
