@@ -2,6 +2,8 @@ package data
 
 import (
 	"algo-agent/internal/conf"
+	"algo-agent/internal/mq/event"
+	json "algo-agent/internal/utils"
 	"context"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -18,11 +20,18 @@ type RabbitMQRepo struct {
 }
 
 // SendMessage 发送字符串消息
-func (r *RabbitMQRepo) SendMessage(ctx context.Context, exchangeName, routingKey, message string) error {
+func (r *RabbitMQRepo) SendMessage(ctx context.Context, exchangeName, routingKey string, message *event.ReqMessage) error {
 	rk := r.conf.Group + r.conf.ServiceQueuePrefix + routingKey
 
-	err := r.publisher.Publish(
-		[]byte(message),
+	messageJson, err := json.ToJSON(message)
+
+	if err != nil {
+		r.log.WithContext(ctx).Errorf("failed to convert object to JSON: %v", err)
+		return err
+	}
+
+	err = r.publisher.Publish(
+		[]byte(messageJson),
 		[]string{rk},
 		rabbitmq.WithPublishOptionsContentType("application/json"),
 	)
@@ -37,11 +46,18 @@ func (r *RabbitMQRepo) SendMessage(ctx context.Context, exchangeName, routingKey
 }
 
 // SendToQueue 发送消息到队列
-func (r *RabbitMQRepo) SendToQueue(ctx context.Context, queueName, message string) error {
+func (r *RabbitMQRepo) SendToQueue(ctx context.Context, queueName string, message *event.ReqMessage) error {
 	rk := r.conf.Group + r.conf.NodeQueuePrefix + queueName
 
-	err := r.publisher.Publish(
-		[]byte(message),
+	messageJson, err := json.ToJSON(message)
+
+	if err != nil {
+		r.log.WithContext(ctx).Errorf("failed to convert object to JSON: %v", err)
+		return err
+	}
+
+	err = r.publisher.Publish(
+		[]byte(messageJson),
 		[]string{rk},
 		rabbitmq.WithPublishOptionsContentType("application/json"),
 	)
@@ -55,11 +71,17 @@ func (r *RabbitMQRepo) SendToQueue(ctx context.Context, queueName, message strin
 }
 
 // SendToService 发送消息到特定服务
-func (r *RabbitMQRepo) SendToService(ctx context.Context, service string, message string) error {
+func (r *RabbitMQRepo) SendToService(ctx context.Context, service string, message *event.ReqMessage) error {
 	rk := r.conf.Group + r.conf.ServiceQueuePrefix + service
+	messageJson, err := json.ToJSON(message)
 
-	err := r.publisher.Publish(
-		[]byte(message),
+	if err != nil {
+		r.log.WithContext(ctx).Errorf("failed to convert object to JSON: %v", err)
+		return err
+	}
+
+	err = r.publisher.Publish(
+		[]byte(messageJson),
 		[]string{rk},
 		rabbitmq.WithPublishOptionsContentType("application/json"),
 	)

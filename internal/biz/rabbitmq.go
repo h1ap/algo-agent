@@ -2,6 +2,7 @@ package biz
 
 import (
 	v1 "algo-agent/api/deploy/v1"
+	"algo-agent/internal/cons/mq"
 	"algo-agent/internal/mq/event"
 	"context"
 	"encoding/json"
@@ -15,13 +16,13 @@ import (
 // MqService 消息队列发送接口
 type MqService interface {
 	// SendMessage 发送字符串消息
-	SendMessage(ctx context.Context, exchangeName, routingKey, message string) error
+	SendMessage(ctx context.Context, exchangeName, routingKey string, message *event.ReqMessage) error
 
 	// SendToQueue 发送消息到队列
-	SendToQueue(ctx context.Context, queueName, message string) error
+	SendToQueue(ctx context.Context, queueName string, message *event.ReqMessage) error
 
 	// SendToService 发送消息到特定服务
-	SendToService(ctx context.Context, service string, message string) error
+	SendToService(ctx context.Context, service string, message *event.ReqMessage) error
 
 	GetOrCreateConsumer(ctx context.Context) (*rabbitmq.Consumer, error)
 
@@ -42,19 +43,19 @@ type RabbitMQUsecase struct {
 }
 
 // SendMessage 发送消息
-func (uc *RabbitMQUsecase) SendMessage(ctx context.Context, exchangeName, routingKey, message string) error {
+func (uc *RabbitMQUsecase) SendMessage(ctx context.Context, exchangeName, routingKey string, message *event.ReqMessage) error {
 	uc.log.WithContext(ctx).Infof("SendMessage: exchangeName=%s, routingKey=%s, message=%s", exchangeName, routingKey, message)
 	return uc.mq.SendMessage(ctx, exchangeName, routingKey, message)
 }
 
 // SendToQueue 发送消息到队列
-func (uc *RabbitMQUsecase) SendToQueue(ctx context.Context, queueName, message string) error {
+func (uc *RabbitMQUsecase) SendToQueue(ctx context.Context, queueName string, message *event.ReqMessage) error {
 	uc.log.WithContext(ctx).Infof("SendToQueue: queueName=%s, message=%s", queueName, message)
 	return uc.mq.SendToQueue(ctx, queueName, message)
 }
 
 // SendToService 发送消息到特定服务
-func (uc *RabbitMQUsecase) SendToService(ctx context.Context, service string, message string) error {
+func (uc *RabbitMQUsecase) SendToService(ctx context.Context, service string, message *event.ReqMessage) error {
 	uc.log.WithContext(ctx).Infof("SendToService: service=%s, message=%s", service, message)
 	return uc.mq.SendToService(ctx, service, message)
 }
@@ -119,44 +120,72 @@ func (uc *RabbitMQUsecase) messageHandler(d rabbitmq.Delivery) rabbitmq.Action {
 
 // processJSONMessage 处理JSON格式的消息
 func (uc *RabbitMQUsecase) processJSONMessage(ctx context.Context, jsonMessage string) {
-	// 尝试解析为训练任务消息
-	var trainTask event.TrainTaskReqMessage
-	err := json.Unmarshal([]byte(jsonMessage), &trainTask)
-	if err == nil && trainTask.TaskId != "" {
-		uc.log.Infof("处理训练任务消息, 任务ID: %s", trainTask.TaskId)
-		uc.trainingUsecase.HandleTrainingTask(ctx, &trainTask)
+
+	var reqMessage event.ReqMessage
+	unmarshalErr := json.Unmarshal([]byte(jsonMessage), &reqMessage)
+	if unmarshalErr != nil {
+		uc.log.Errorf("解析JSON消息失败: %v", unmarshalErr)
 		return
 	}
 
-	// 尝试解析为评估任务消息
-	var evalTask event.EvalSendMessage
-	err = json.Unmarshal([]byte(jsonMessage), &evalTask)
-	if err == nil && evalTask.TaskId != "" {
-		uc.log.Infof("处理评估任务消息, 任务ID: %s", evalTask.TaskId)
-		uc.evalUsecase.HandleEvalTask(ctx, &evalTask)
-		return
-	}
+	if reqMessage.Type != mq.UNKNOWN.Code() {
+		payloadJson, err := json.Marshal(reqMessage.Payload)
+		if err != nil {
+			uc.log.Errorf("序列化JSON消息失败: %v", err)
+			return
+		}
 
-	// 尝试解析为发布任务消息
-	var publishTask event.TrainPublishReqMessage
-	err = json.Unmarshal([]byte(jsonMessage), &publishTask)
-	if err == nil && publishTask.TrainDetailId != "" && publishTask.ModelVersionId > 0 {
-		uc.log.Infof("处理发布任务消息, 训练详情ID: %s", publishTask.TrainDetailId)
-		uc.extractUsecase.HandleExtractTask(ctx, &publishTask)
-		return
-	}
+		// 利用switch匹配消息类型
+		switch reqMessage.Type {
+		case mq.TRAIN_TASK.Code():
+			var trainTask event.TrainTaskReqMessage
+			err = json.Unmarshal(payloadJson, &trainTask)
 
-	// 尝试解析为部署任务消息
-	var deployTask v1.DeployRequest
-	err = json.Unmarshal([]byte(jsonMessage), &deployTask)
-	if err == nil && deployTask.ServiceId != "" {
-		uc.log.Infof("处理部署任务消息, 服务ID: %s", deployTask.ServiceId)
-		uc.deployUsecase.HandleEvent(ctx, &deployTask)
-		return
-	}
+			if err != nil || trainTask.TaskId == "" {
+				uc.log.Errorf("解析训练任务消息失败: %v", err)
+				return
+			}
 
-	// 无法识别的JSON消息
-	uc.log.Warnf("无法识别的JSON消息类型: %s", jsonMessage)
+			uc.log.Infof("处理训练任务消息, 任务ID: %s", trainTask.TaskId)
+			uc.trainingUsecase.HandleTrainingTask(ctx, &trainTask)
+		case mq.TASK_EVALUATE.Code():
+			var evalTask event.EvalSendMessage
+			err = json.Unmarshal(payloadJson, &evalTask)
+
+			if err != nil || evalTask.TaskId == "" {
+				uc.log.Errorf("解析评估任务消息失败: %v", err)
+				return
+			}
+
+			uc.log.Infof("处理评估任务消息, 任务ID: %s", evalTask.TaskId)
+			uc.evalUsecase.HandleEvalTask(ctx, &evalTask)
+		case mq.TRAIN_PUBLISH.Code():
+			var publishTask event.TrainPublishReqMessage
+			err = json.Unmarshal(payloadJson, &publishTask)
+
+			if err != nil || publishTask.TrainDetailId == "" {
+				uc.log.Errorf("解析发布任务消息失败: %v", err)
+				return
+			}
+
+			uc.log.Infof("处理发布任务消息, 训练详情ID: %s", publishTask.TrainDetailId)
+			uc.extractUsecase.HandleExtractTask(ctx, &publishTask)
+		case mq.TASK_DEPLOY.Code():
+			var deployTask v1.DeployRequest
+			err = json.Unmarshal(payloadJson, &deployTask)
+
+			if err != nil || deployTask.ServiceId == "" {
+				uc.log.Errorf("解析部署任务消息失败: %v", err)
+				return
+			}
+
+			uc.log.Infof("处理部署任务消息, 服务ID: %s", deployTask.ServiceId)
+			uc.deployUsecase.HandleEvent(ctx, &deployTask)
+		default:
+			// 无法识别的JSON消息
+			uc.log.Warnf("无法识别的JSON消息类型: %s", jsonMessage)
+		}
+	}
 }
 
 // Close 关闭消费者

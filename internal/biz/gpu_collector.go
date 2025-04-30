@@ -2,8 +2,8 @@ package biz
 
 import (
 	"algo-agent/internal/cons/gpu"
+	"algo-agent/internal/cons/mq"
 	"algo-agent/internal/mq/event"
-	"algo-agent/internal/utils"
 	"context"
 	"runtime"
 	"time"
@@ -81,15 +81,11 @@ func (uc *GpuUsecase) GetSystemMetrics() *event.SystemMetricsEvent {
 // ReportSystemMetrics 上报系统指标
 func (uc *GpuUsecase) ReportSystemMetrics(ctx context.Context) {
 	metrics := uc.GetSystemMetrics()
-	// 将指标转换为JSON
-	jsonStr, err := utils.ToJSON(metrics)
-	if err != nil {
-		uc.log.Errorf("系统指标转换JSON失败: %v", err)
-		return
-	}
-
 	// 发送到训练服务
-	err = uc.mq.SendToService(ctx, uc.tsn, jsonStr)
+	err := uc.mq.SendToService(ctx, uc.tsn, &event.ReqMessage{
+		Type:    mq.SYSTEM_METRICS.Code(),
+		Payload: metrics,
+	})
 	if err != nil {
 		uc.log.Errorf("系统指标上报失败: %v", err)
 		return

@@ -1,9 +1,9 @@
 package service
 
 import (
+	"algo-agent/internal/cons/mq"
 	"algo-agent/internal/utils"
 	"context"
-	"encoding/json"
 	"net/url"
 	"strconv"
 
@@ -44,15 +44,11 @@ func (s *NodeOfflineServer) Stop(ctx context.Context) error {
 		NodeName: s.nodeName,
 	}
 
-	// 序列化消息
-	msgBytes, err := json.Marshal(trainRPoolCloseMessage)
-	if err != nil {
-		s.log.Error("序列化下线消息失败: ", err)
-		return err
-	}
-
 	// 发送消息到训练服务
-	err = s.mqService.SendToService(ctx, s.trainService, string(msgBytes))
+	err := s.mqService.SendToService(ctx, s.trainService, &event.ReqMessage{
+		Type:    mq.TRAIN_POOL_CLOSE.Code(),
+		Payload: trainRPoolCloseMessage,
+	})
 	if err != nil {
 		s.log.Error("发送下线消息失败: ", err)
 		return err

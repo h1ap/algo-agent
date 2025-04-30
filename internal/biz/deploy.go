@@ -3,7 +3,9 @@ package biz
 import (
 	v1 "algo-agent/api/deploy/v1"
 	"algo-agent/internal/cons/file"
+	"algo-agent/internal/cons/mq"
 	taskArgs "algo-agent/internal/cons/task"
+	"algo-agent/internal/mq/event"
 	"algo-agent/internal/utils"
 	"context"
 	"errors"
@@ -45,12 +47,10 @@ func (duc *DeployUsecase) sendStatusChangeMessage(ctx context.Context, serivce *
 		Remark:        serivce.Remark,
 	}
 
-	jsonStr, err := utils.ToJSON(reply)
-	if err != nil {
-		return fmt.Errorf("转换为JSON失败: %v", err)
-	}
-
-	return duc.mq.SendToService(ctx, duc.dsn, jsonStr)
+	return duc.mq.SendToService(ctx, duc.dsn, &event.ReqMessage{
+		Type:    mq.TASK_DEPLOY.Code(),
+		Payload: reply,
+	})
 }
 
 // 部署一个推理服务

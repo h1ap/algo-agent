@@ -11,6 +11,3 @@ type DockerLogRespMessage struct {
 	// 任务类型
 	TaskType int `json:"taskType"`
 }
-
-// 实现RespMessage接口
-func (m *DockerLogRespMessage) IsRespMessage() {}

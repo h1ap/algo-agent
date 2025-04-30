@@ -1,6 +1,7 @@
 package biz
 
 import (
+	"algo-agent/internal/cons/mq"
 	"context"
 	"errors"
 	"fmt"
@@ -54,12 +55,10 @@ func (ttu *TrainingTaskUsecase) sendStatusChangeMessage(ctx context.Context, tas
 		Remark:     taskInfo.Remark,
 	}
 
-	jsonStr, err := utils.ToJSON(reply)
-	if err != nil {
-		return fmt.Errorf("转换为JSON失败: %v", err)
-	}
-
-	return ttu.mq.SendToService(ctx, ttu.tsn, jsonStr)
+	return ttu.mq.SendToService(ctx, ttu.tsn, &event.ReqMessage{
+		Type:    mq.TRAIN_TASK.Code(),
+		Payload: reply,
+	})
 }
 
 // StartTraining 开始训练任务
@@ -337,13 +336,10 @@ func (ttu *TrainingTaskUsecase) sendDockerLogData(ctx context.Context, taskId st
 		TaskType: 0, // 训练类型
 	}
 
-	jsonStr, err := utils.ToJSON(logMsg)
-	if err != nil {
-		ttu.log.Errorf("转换日志消息为JSON失败: %v", err)
-		return
-	}
-
-	if err := ttu.mq.SendToService(ctx, ttu.tsn, jsonStr); err != nil {
+	if err := ttu.mq.SendToService(ctx, ttu.tsn, &event.ReqMessage{
+		Type:    mq.DOCKER_LOG.Code(),
+		Payload: logMsg,
+	}); err != nil {
 		ttu.log.Errorf("发送日志消息失败: %v", err)
 	}
 }
@@ -431,13 +427,10 @@ func (ttu *TrainingTaskUsecase) EpochInfoHandle(ctx context.Context, epochInfo *
 		Metrics:      metrics,
 	}
 
-	jsonStr, err := utils.ToJSON(reply)
-	if err != nil {
-		ttu.log.Errorf("转换训练周期信息为JSON失败: %v", err)
-		return
-	}
-
-	if err := ttu.mq.SendToService(ctx, ttu.tsn, jsonStr); err != nil {
+	if err := ttu.mq.SendToService(ctx, ttu.tsn, &event.ReqMessage{
+		Type:    mq.TRAIN_TASK.Code(),
+		Payload: reply,
+	}); err != nil {
 		ttu.log.Errorf("发送训练周期信息失败: %v", err)
 	}
 }
@@ -487,12 +480,10 @@ func (ttu *TrainingTaskUsecase) CheckpointHandle(ctx context.Context, checkpoint
 		CheckpointFilePath: objectUrl,
 	}
 
-	jsonStr, err := utils.ToJSON(reply)
-	if err != nil {
-		return fmt.Errorf("转换检查点信息为JSON失败: %v", err)
-	}
-
-	return ttu.mq.SendToService(ctx, ttu.tsn, jsonStr)
+	return ttu.mq.SendToService(ctx, ttu.tsn, &event.ReqMessage{
+		Type:    mq.TRAIN_TASK.Code(),
+		Payload: reply,
+	})
 }
 
 // FinishHandle 处理训练完成
@@ -601,13 +592,10 @@ func (ttu *TrainingTaskUsecase) FinishHandle(ctx context.Context, result *train.
 		Epoch:          result.BestEpoch,
 	}
 
-	jsonStr, err := utils.ToJSON(reply)
-	if err != nil {
-		ttu.log.Errorf("转换训练完成信息为JSON失败: %v", err)
-		return err
-	}
-
-	if err := ttu.mq.SendToService(ctx, ttu.tsn, jsonStr); err != nil {
+	if err := ttu.mq.SendToService(ctx, ttu.tsn, &event.ReqMessage{
+		Type:    mq.TRAIN_TASK.Code(),
+		Payload: reply,
+	}); err != nil {
 		ttu.log.Errorf("发送训练完成信息失败: %v", err)
 		return err
 	}

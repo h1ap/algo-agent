@@ -1,6 +1,7 @@
 package biz
 
 import (
+	"algo-agent/internal/cons/mq"
 	"context"
 	"errors"
 	"fmt"
@@ -52,12 +53,10 @@ func (etu *EvalTaskUsecase) sendStatusChangeMessage(ctx context.Context, taskInf
 		Remark: taskInfo.Remark,
 	}
 
-	jsonStr, err := utils.ToJSON(reply)
-	if err != nil {
-		return fmt.Errorf("转换为JSON失败: %v", err)
-	}
-
-	return etu.mq.SendToService(ctx, etu.tsn, jsonStr)
+	return etu.mq.SendToService(ctx, etu.tsn, &event.ReqMessage{
+		Type:    mq.TASK_EVALUATE.Code(),
+		Payload: reply,
+	})
 }
 
 // StartEvaluation 开始评估任务
@@ -440,13 +439,10 @@ func (etu *EvalTaskUsecase) BatchInfoHandle(ctx context.Context, batchInfo *eval
 		DetailList: detailList,
 	}
 
-	jsonStr, err := utils.ToJSON(reply)
-	if err != nil {
-		etu.log.Errorf("转换批次信息为JSON失败: %v", err)
-		return
-	}
-
-	if err := etu.mq.SendToService(ctx, etu.tsn, jsonStr); err != nil {
+	if err := etu.mq.SendToService(ctx, etu.tsn, &event.ReqMessage{
+		Type:    mq.TASK_EVALUATE.Code(),
+		Payload: reply,
+	}); err != nil {
 		etu.log.Errorf("发送批次信息失败: %v", err)
 	}
 }
@@ -478,13 +474,10 @@ func (etu *EvalTaskUsecase) FinishHandle(ctx context.Context, result *eval.EvalT
 		Result: resultJSON,
 	}
 
-	jsonStr, err := utils.ToJSON(reply)
-	if err != nil {
-		etu.log.Errorf("转换评估完成信息为JSON失败: %v", err)
-		return
-	}
-
-	if err := etu.mq.SendToService(ctx, etu.tsn, jsonStr); err != nil {
+	if err := etu.mq.SendToService(ctx, etu.tsn, &event.ReqMessage{
+		Type:    mq.TASK_EVALUATE.Code(),
+		Payload: reply,
+	}); err != nil {
 		etu.log.Errorf("发送评估完成信息失败: %v", err)
 		return
 	}
@@ -702,13 +695,10 @@ func (etu *EvalTaskUsecase) sendDockerLogData(ctx context.Context, taskId string
 		TaskType: 1, // 评估类型
 	}
 
-	jsonStr, err := utils.ToJSON(logMsg)
-	if err != nil {
-		etu.log.Errorf("转换日志消息为JSON失败: %v", err)
-		return
-	}
-
-	if err := etu.mq.SendToService(ctx, etu.tsn, jsonStr); err != nil {
+	if err := etu.mq.SendToService(ctx, etu.tsn, &event.ReqMessage{
+		Type:    mq.DOCKER_LOG.Code(),
+		Payload: logMsg,
+	}); err != nil {
 		etu.log.Errorf("发送日志消息失败: %v", err)
 	}
 }

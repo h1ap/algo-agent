@@ -1,6 +1,7 @@
 package biz
 
 import (
+	"algo-agent/internal/cons/mq"
 	"algo-agent/internal/model/extract"
 	"context"
 	"errors"
@@ -47,12 +48,10 @@ func (uc *ExtractTaskUsecase) sendStatusChangeMessage(ctx context.Context, taskI
 		Remark:         taskInfo.Remark,
 	}
 
-	jsonStr, err := utils.ToJSON(reply)
-	if err != nil {
-		return fmt.Errorf("转换为JSON失败: %v", err)
-	}
-
-	return uc.mq.SendToService(ctx, uc.tsn, jsonStr)
+	return uc.mq.SendToService(ctx, uc.tsn, &event.ReqMessage{
+		Type:    mq.TRAIN_PUBLISH.Code(),
+		Payload: reply,
+	})
 }
 
 // AddTask 添加提取任务
@@ -249,13 +248,10 @@ func (uc *ExtractTaskUsecase) sendDockerLogData(ctx context.Context, taskId stri
 		TaskType: 0, // 提取任务也使用类型0
 	}
 
-	jsonStr, err := utils.ToJSON(logMsg)
-	if err != nil {
-		uc.log.Errorf("转换日志消息为JSON失败: %v", err)
-		return
-	}
-
-	if err := uc.mq.SendToService(ctx, uc.tsn, jsonStr); err != nil {
+	if err := uc.mq.SendToService(ctx, uc.tsn, &event.ReqMessage{
+		Type:    mq.DOCKER_LOG.Code(),
+		Payload: logMsg,
+	}); err != nil {
 		uc.log.Errorf("发送日志消息失败: %v", err)
 	}
 }
@@ -367,12 +363,10 @@ func (uc *ExtractTaskUsecase) ExtractTaskResultHandle(ctx context.Context, resul
 		ModelWeightsPath: objectUrl,
 	}
 
-	jsonStr, err := utils.ToJSON(reply)
-	if err != nil {
-		return fmt.Errorf("转换为JSON失败: %v", err)
-	}
-
-	if err := uc.mq.SendToService(ctx, uc.tsn, jsonStr); err != nil {
+	if err := uc.mq.SendToService(ctx, uc.tsn, &event.ReqMessage{
+		Type:    mq.TRAIN_PUBLISH.Code(),
+		Payload: reply,
+	}); err != nil {
 		uc.log.Errorf("发送任务完成消息失败: %v", err)
 		return err
 	}
